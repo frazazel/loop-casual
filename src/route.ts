@@ -10,6 +10,8 @@ export const routing: string[] = [
   "Misc/Acquire Birch Battery",
   "Keys/Deck",
   "Pull/All",
+  "Misc/Dog Chow", // Eat if there are no other options
+  "Misc/Cake-Shaped Arena", // Arena if there are no charged options
 
   // Get infinite loop
   "McLargeHuge/Ore Mountain",
@@ -32,6 +34,7 @@ export const routing: string[] = [
   // Once level 11 is hit, grab -combat
   "Absorb/The Black Forest",
   "Hidden City/Open Temple",
+  "Misc/Fortune",
 
   // Aim for remaining pygmies
   "Hidden City/Bowling Skills",
@@ -52,6 +55,11 @@ export const routing: string[] = [
   "Palindome/Bat Snake",
   "Bat/Use Sonar 3", // Prepare for lobsterfrogman backups
   "Palindome/Cold Snake",
+
+  // Open Hidden City with Sue buff
+  "Hidden City/Open Office",
+  "Hidden City/Open Hospital",
+  "Hidden City/Open Apartment",
 
   // Knock down -combats
   "Manor/Finish Floor2",
@@ -83,6 +91,7 @@ export const routing: string[] = [
   "Bat/Finish",
   "Tower/Naughty Sorceress",
   "Absorb/All",
+  "Reprocess/All", // Return to locations if reprocessing was missed
 ];
 
 export function prioritize(tasks: Task[]): Task[] {

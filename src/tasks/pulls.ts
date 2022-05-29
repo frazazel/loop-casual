@@ -17,6 +17,11 @@ type PullSpec = {
 } & ({ pull: Item } | { pull: Item[] | (() => Item | undefined); name: string });
 
 export const pulls: PullSpec[] = [
+  // Always pull the key items first
+  { pull: $item`daily dungeon malware`, useful: () => keyStrategy.useful(Keys.Malware) },
+  { pull: $item`Boris's ring`, useful: () => keyStrategy.useful(Keys.ZapBoris) },
+  { pull: $item`Jarlsberg's earring`, useful: () => keyStrategy.useful(Keys.ZapJarlsberg) },
+  { pull: $item`Sneaky Pete's breath spray`, useful: () => keyStrategy.useful(Keys.ZapSneaky) },
   { pull: $item`book of matches` },
   { pull: $item`blackberry galoshes` },
   { pull: $item`antique machete` },
@@ -32,9 +37,6 @@ export const pulls: PullSpec[] = [
   { pull: $item`yule hatchet` },
   { pull: $item`grey down vest` },
   { pull: $item`killing jar` },
-  { pull: $item`Boris's ring`, useful: () => keyStrategy.useful(Keys.ZapBoris) },
-  { pull: $item`Jarlsberg's earring`, useful: () => keyStrategy.useful(Keys.ZapJarlsberg) },
-  { pull: $item`Sneaky Pete's breath spray`, useful: () => keyStrategy.useful(Keys.ZapSneaky) },
   { pull: $item`old patched suit-pants`, optional: true },
   { pull: $item`transparent pants`, optional: true },
   { pull: $item`deck of lewd playing cards`, optional: true },
@@ -48,6 +50,8 @@ export const pulls: PullSpec[] = [
         : itemAmount(Item.get(get("trapperOre"))) < 3 && step("questL08Trapper") < 2,
   },
   { pull: $item`mafia thumb ring`, optional: true },
+  { pull: $item`giant yellow hat` },
+  { pull: $item`gravy boat` },
 ];
 
 class Pull {
@@ -153,6 +157,10 @@ class PullStrategy {
           continue;
       }
     }
+  }
+
+  public pullsUsed(): number {
+    return get("_roninStoragePulls").split(",").length;
   }
 }
 

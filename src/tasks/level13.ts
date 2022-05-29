@@ -1,4 +1,14 @@
-import { cliExecute, myHp, myMaxhp, myPath, restoreHp, runChoice, use, visitUrl } from "kolmafia";
+import {
+  cliExecute,
+  myHp,
+  myMaxhp,
+  myPath,
+  print,
+  restoreHp,
+  runChoice,
+  use,
+  visitUrl,
+} from "kolmafia";
 import {
   $effect,
   $effects,
@@ -30,7 +40,7 @@ const Challenges: Task[] = [
       runChoice(1);
       runChoice(6);
     },
-    outfit: { modifier: "init" },
+    outfit: { modifier: "init", familiar: $familiar`Oily Woim` },
     limit: { tries: 1 },
     freeaction: true,
   },
@@ -350,7 +360,7 @@ export const TowerQuest: Quest = {
       },
       completed: () => step("questL13Final") > 7,
       do: $location`Tower Level 2`,
-      outfit: { modifier: "meat" },
+      outfit: { modifier: "meat", equip: $items`amulet coin` },
       combat: new CombatStrategy(true).killHard(),
       limit: { tries: 2 },
     },
@@ -428,6 +438,16 @@ export const TowerQuest: Quest = {
       priority: () => OverridePriority.Last,
       completed: () => step("questL13Final") === 999 || args.class === 0 || myPath() !== "Grey You",
       do: () => {
+        print(
+          `   Monsters remaining: ${Array.from(absorptionTargets.remainingAbsorbs()).join(", ")}`,
+          "purple"
+        );
+        print(
+          `   Reprocess remaining: ${Array.from(absorptionTargets.remainingReprocess()).join(
+            ", "
+          )}`,
+          "purple"
+        );
         visitUrl("place.php?whichplace=nstower&action=ns_11_prism");
         visitUrl("main.php");
         runChoice(args.class);

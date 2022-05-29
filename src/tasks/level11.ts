@@ -78,7 +78,7 @@ const Desert: Task[] = [
   {
     name: "Scrip",
     after: ["Misc/Unlock Beach"],
-    ready: () => myMeat() >= 500,
+    ready: () => myMeat() >= 6000 || (step("questL11Black") >= 4 && myMeat() >= 500),
     completed: () => have($item`Shore Inc. Ship Trip Scrip`) || have($item`UV-resistant compass`),
     do: $location`The Shore, Inc. Travel Agency`,
     choices: { 793: 1 },
@@ -136,7 +136,10 @@ const Desert: Task[] = [
       { item: $item`can of black paint`, useful: () => (get("gnasirProgress") & 2) === 0 },
       { item: $item`killing jar`, useful: () => (get("gnasirProgress") & 4) === 0 },
     ],
-    ready: () => itemAmount($item`worm-riding manual page`) < 15 && !have($item`worm-riding hooks`),
+    ready: () =>
+      itemAmount($item`worm-riding manual page`) < 15 &&
+      !have($item`worm-riding hooks`) &&
+      (!have($effect`A Girl Named Sue`) || have($effect`Ultrahydrated`)),
     priority: () =>
       have($effect`Ultrahydrated`) ? OverridePriority.Effect : OverridePriority.None,
     completed: () => get("desertExploration") >= 100,
@@ -278,6 +281,10 @@ const Pyramid: Task[] = [
     after: ["Use Bomb"],
     completed: () => step("questL11Pyramid") === 999,
     do: () => visitUrl("place.php?whichplace=pyramid&action=pyramid_state1a"),
+    outfit: () => {
+      if (!have($item`Pick-O-Matic lockpicks`)) return { familiar: $familiar`Gelatinous Cubeling` }; // Ensure we get equipment
+      return {};
+    },
     combat: new CombatStrategy(true)
       .macro(
         new Macro()

@@ -36,7 +36,7 @@ import { checkRequirements } from "./sim";
 import { pullStrategy } from "./tasks/pulls";
 import { keyStrategy } from "./tasks/keys";
 
-const time_property = "_loop_casual_first_start";
+const time_property = "_loop_gyou_first_start";
 
 export const args = Args.create("loopgyou", "A script to complete gyou runs.", {
   sim: Args.flag({ help: "Check if you have the requirements to run this script" }),
@@ -59,6 +59,9 @@ export const args = Args.create("loopgyou", "A script to complete gyou runs.", {
   pulls: Args.number({
     help: "Number of pulls to use. Lower this if you would like to save some pulls for in-ronin farming.",
     default: 20,
+  }),
+  verboseequip: Args.flag({
+    help: "Print out equipment usage before each task.",
   }),
 });
 export function main(command?: string): void {
@@ -146,6 +149,17 @@ export function main(command?: string): void {
       )} since first run today started`,
       "purple"
     );
+  print(`   Pulls used: ${pullStrategy.pullsUsed()}`, "purple");
+  if (myPath() === "Grey You") {
+    print(
+      `   Monsters remaining: ${Array.from(absorptionTargets.remainingAbsorbs()).join(", ")}`,
+      "purple"
+    );
+    print(
+      `   Reprocess remaining: ${Array.from(absorptionTargets.remainingReprocess()).join(", ")}`,
+      "purple"
+    );
+  }
 }
 
 function getNextTask(engine: Engine, tasks: Task[]): [Task, string, WandererSource?] | undefined {

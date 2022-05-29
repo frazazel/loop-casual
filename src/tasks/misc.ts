@@ -42,6 +42,7 @@ import {
 import { OutfitSpec, Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 import { Engine } from "../engine";
+import { Keys, keyStrategy } from "./keys";
 
 export const MiscQuest: Quest = {
   name: "Misc",
@@ -61,7 +62,7 @@ export const MiscQuest: Quest = {
     {
       name: "Island Scrip",
       after: ["Unlock Beach"],
-      ready: () => myMeat() >= 500,
+      ready: () => myMeat() >= 6000 || (step("questL11Black") >= 4 && myMeat() >= 500),
       completed: () =>
         itemAmount($item`Shore Inc. Ship Trip Scrip`) >= 3 ||
         have($item`dinghy plans`) ||
@@ -121,8 +122,7 @@ export const MiscQuest: Quest = {
     {
       name: "Voting",
       after: [],
-      ready: () => false,
-      completed: () => have($item`"I Voted!" sticker`) || get("_voteToday") || true,
+      completed: () => have($item`"I Voted!" sticker`) || get("_voteToday") || !get("voteAlways"),
       do: (): void => {
         // Taken from garbo
         const voterValueTable = [
@@ -210,7 +210,7 @@ export const MiscQuest: Quest = {
     {
       name: "Protonic Ghost",
       after: [],
-      completed: () => step("questL13Final") >= 0, // Stop after tower starts
+      completed: () => false,
       priority: () => OverridePriority.Always,
       ready: () => {
         if (!have($item`protonic accelerator pack`)) return false;
@@ -283,6 +283,8 @@ export const MiscQuest: Quest = {
       outfit: (): OutfitSpec => {
         if (get("ghostLocation") === $location`Inside the Palindome`)
           return { equip: $items`Talisman o' Namsilat, protonic accelerator pack` };
+        if (get("ghostLocation") === $location`The Icy Peak`)
+          return { equip: $items`protonic accelerator pack`, modifier: "cold res" };
         return { equip: $items`protonic accelerator pack` };
       },
       combat: new CombatStrategy().macro(() => {
@@ -383,8 +385,8 @@ export const MiscQuest: Quest = {
       combat: new CombatStrategy().macro(
         new Macro()
           .tryItem($item`cosmic bowling ball`)
-          .tryItem("10769") // Arr, M80; "use Arr, M80" trys and fails to funksling
-          .tryItem("10769")
+          .step("if hascombatitem 10769;use Arr;endif;") // Arr, M80; "use Arr, M80" trys and fails to funksling
+          .step("if hascombatitem 10769;use Arr;endif;")
           .skill($skill`Pseudopod Slap`)
           .repeat()
       ),
@@ -513,7 +515,10 @@ export const WandQuest: Quest = {
         have($item`ebony wand`) ||
         have($item`hexagonal wand`) ||
         have($item`marble wand`) ||
-        have($item`pine wand`),
+        have($item`pine wand`) ||
+        (keyStrategy.useful(Keys.ZapBoris) === false &&
+          keyStrategy.useful(Keys.ZapJarlsberg) === false &&
+          keyStrategy.useful(Keys.ZapSneaky) === false),
       prepare: () => {
         if (have($item`plus sign`)) use($item`plus sign`);
       },
@@ -534,7 +539,10 @@ export const WandQuest: Quest = {
         have($item`ebony wand`) ||
         have($item`hexagonal wand`) ||
         have($item`marble wand`) ||
-        have($item`pine wand`),
+        have($item`pine wand`) ||
+        (keyStrategy.useful(Keys.ZapBoris) === false &&
+          keyStrategy.useful(Keys.ZapJarlsberg) === false &&
+          keyStrategy.useful(Keys.ZapSneaky) === false),
       do: () => use($item`dead mimic`),
       freeaction: true,
       limit: { tries: 1 },

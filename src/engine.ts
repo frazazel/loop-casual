@@ -3,7 +3,7 @@ import {
   autosellPrice,
   drink,
   eat,
-  familiarWeight,
+  equippedItem,
   getInventory,
   Item,
   Location,
@@ -16,8 +16,10 @@ import {
   myMp,
   myPath,
   myTurncount,
+  print,
   restoreHp,
   restoreMp,
+  Slot,
   toInt,
   use,
 } from "kolmafia";
@@ -70,7 +72,7 @@ import {
 } from "./resources";
 import { AbsorptionTargets } from "./tasks/absorb";
 import { Prioritization } from "./priority";
-import { ponderPrediction } from "./main";
+import { args, ponderPrediction } from "./main";
 import { flyersDone } from "./tasks/level12";
 
 export class Engine {
@@ -170,16 +172,15 @@ export class Engine {
       // (if we have teleportitis, everything is a possible target)
       const absorb_targets =
         task.do instanceof Location
-          ? this.absorptionTargets.remaining(have($effect`Teleportitis`) ? undefined : task.do)
+          ? this.absorptionTargets.remainingReprocess(
+              have($effect`Teleportitis`) ? undefined : task.do
+            )
           : [];
       for (const monster of absorb_targets) {
         if (this.absorptionTargets.isReprocessTarget(monster)) {
-          if (familiarWeight($familiar`Grey Goose`) >= 6 && outfit.equip($familiar`Grey Goose`)) {
-            task_combat.prependMacro(new Macro().trySkill($skill`Re-Process Matter`), monster);
-            debug(`Target x2: ${monster.name}`, "purple");
-          } else {
-            debug(`Target x2 (no reprocess): ${monster.name}`, "purple");
-          }
+          outfit.equip($familiar`Grey Goose`);
+          task_combat.prependMacro(new Macro().trySkill($skill`Re-Process Matter`), monster);
+          debug(`Target x2: ${monster.name}`, "purple");
         } else {
           debug(`Target: ${monster.name}`, "purple");
         }
@@ -202,7 +203,9 @@ export class Engine {
         !flyersDone() &&
         (!(task.do instanceof Location) || !blacklist.has(task.do))
       ) {
-        task_combat.prependMacro(new Macro().tryItem($item`rock band flyers`));
+        task_combat.prependMacro(
+          new Macro().if_("!hpbelow 50", new Macro().tryItem($item`rock band flyers`))
+        );
       }
 
       // Apply resources
@@ -292,6 +295,11 @@ export class Engine {
 
     // Do any task-specific preparation
     if (task.prepare) task.prepare();
+
+    if (args.verboseequip) {
+      const equipped = [...new Set(Slot.all().map((slot) => equippedItem(slot)))];
+      print(`Equipped: ${equipped.join(", ")}`);
+    }
 
     // Do the task
     if (typeof task.do === "function") {

@@ -8,13 +8,26 @@ import {
   runChoice,
   visitUrl,
 } from "kolmafia";
-import { $item, $items, $location, $monster, $slots, get, have } from "libram";
+import {
+  $effect,
+  $item,
+  $items,
+  $location,
+  $monster,
+  $slots,
+  get,
+  have,
+  Macro,
+  set,
+  uneffect,
+} from "libram";
 import { CombatStrategy } from "../combat";
-import { Quest, Task } from "./structure";
+import { Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 
 export enum Keys {
   Deck = "Deck",
+  Malware = "Daily Dungeon Malware",
   Dungeon = "Daily Dungeon",
   ZapBoris = "Zap Boris",
   ZapSneaky = "Zap Sneaky",
@@ -38,9 +51,58 @@ const heroKeys: KeyTask[] = [
     freeaction: true,
   },
   {
+    which: Keys.Malware,
+    possible: () => !get("dailyDungeonDone") && !get("_dailyDungeonMalwareUsed"),
+    ready: () =>
+      step("questL13Final") !== -1 ||
+      (have($item`Pick-O-Matic lockpicks`) &&
+        have($item`ring of Detect Boring Doors`) &&
+        have($item`eleven-foot pole`)),
+    after: ["Pull/daily dungeon malware"],
+    completed: () => get("dailyDungeonDone") || get("_dailyDungeonMalwareUsed"),
+    prepare: () => {
+      set("_loop_gyou_malware_amount", itemAmount($item`daily dungeon malware`));
+      if (have($item`Pick-O-Matic lockpicks`)) return;
+      if (have($item`Platinum Yendorian Express Card`)) return;
+      if (have($item`skeleton bone`) && have($item`loose teeth`)) cliExecute("make * skeleton key");
+    },
+    do: $location`The Daily Dungeon`,
+    post: () => {
+      if (itemAmount($item`daily dungeon malware`) < get("_loop_gyou_malware_amount", 0))
+        set("_dailyDungeonMalwareUsed", true);
+      uneffect($effect`Apathy`);
+    },
+    outfit: { equip: $items`ring of Detect Boring Doors`, modifier: "init" }, // Avoid apathy
+    combat: new CombatStrategy().macro(new Macro().item($item`daily dungeon malware`)).kill(),
+    choices: {
+      689: 1,
+      690: () => (have($item`ring of Detect Boring Doors`) ? 2 : 3),
+      691: () => 3, // Do not skip the second chest; there is a chance we skip all the monsters
+      692: () => {
+        if (have($item`Pick-O-Matic lockpicks`)) return 3;
+        if (have($item`Platinum Yendorian Express Card`)) return 7;
+        if (
+          itemAmount($item`skeleton key`) > 1 ||
+          (itemAmount($item`skeleton bone`) > 1 && itemAmount($item`loose teeth`) > 1)
+        )
+          return 2;
+        if (have($item`skeleton key`) && get("nsTowerDoorKeysUsed").includes("skeleton key"))
+          return 2;
+        return 3;
+      },
+      693: () => (have($item`eleven-foot pole`) ? 2 : 1),
+    },
+    limit: { tries: 15 },
+  },
+  {
     which: Keys.Dungeon,
     possible: () => !get("dailyDungeonDone"),
-    after: [],
+    ready: () =>
+      step("questL13Final") !== -1 ||
+      (have($item`Pick-O-Matic lockpicks`) &&
+        have($item`ring of Detect Boring Doors`) &&
+        have($item`eleven-foot pole`)),
+    after: ["Daily Dungeon Malware"],
     completed: () => get("dailyDungeonDone"),
     prepare: () => {
       if (have($item`Pick-O-Matic lockpicks`)) return;
@@ -48,7 +110,10 @@ const heroKeys: KeyTask[] = [
       if (have($item`skeleton bone`) && have($item`loose teeth`)) cliExecute("make * skeleton key");
     },
     do: $location`The Daily Dungeon`,
-    outfit: { equip: $items`ring of Detect Boring Doors` },
+    post: () => {
+      uneffect($effect`Apathy`);
+    },
+    outfit: { equip: $items`ring of Detect Boring Doors`, modifier: "init" }, // Avoid apathy
     combat: new CombatStrategy().kill(),
     choices: {
       689: 1,
@@ -57,7 +122,11 @@ const heroKeys: KeyTask[] = [
       692: () => {
         if (have($item`Pick-O-Matic lockpicks`)) return 3;
         if (have($item`Platinum Yendorian Express Card`)) return 7;
-        if (itemAmount($item`skeleton key`) > 1) return 2;
+        if (
+          itemAmount($item`skeleton key`) > 1 ||
+          (itemAmount($item`skeleton bone`) > 1 && itemAmount($item`loose teeth`) > 1)
+        )
+          return 2;
         if (have($item`skeleton key`) && get("nsTowerDoorKeysUsed").includes("skeleton key"))
           return 2;
         return 3;
@@ -212,7 +281,7 @@ export const KeysQuest: Quest = {
     },
     {
       name: "Digital Key",
-      after: ["Open 8-Bit"],
+      after: ["Open 8-Bit", "Tower/Coronation"],
       completed: () =>
         get("nsTowerDoorKeysUsed").includes("digital key") ||
         have($item`digital key`) ||
