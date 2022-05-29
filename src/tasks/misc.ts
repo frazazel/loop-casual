@@ -406,6 +406,70 @@ export const MiscQuest: Quest = {
       },
       limit: { tries: 1 },
     },
+    {
+      name: "Fortune",
+      after: ["Hidden City/Open City"],
+      completed: () => get("_clanFortuneBuffUsed") || !have($item`Clan VIP Lounge key`),
+      priority: () => OverridePriority.Free,
+      do: () => {
+        cliExecute("fortune buff susie");
+      },
+      limit: { tries: 1 },
+    },
+    {
+      name: "Dog Chow",
+      after: [],
+      ready: () => have($item`Ghost Dog Chow`) && familiarWeight($familiar`Grey Goose`) < 6,
+      completed: () => false,
+      priority: () => OverridePriority.BadGoose,
+      do: () => {
+        use($item`Ghost Dog Chow`);
+        if (familiarWeight($familiar`Grey Goose`) >= 6 && have($item`Ghost Dog Chow`))
+          use($item`Ghost Dog Chow`);
+      },
+      outfit: { familiar: $familiar`Grey Goose` },
+      freeaction: true,
+      limit: { soft: 20 },
+    },
+    {
+      name: "Cake-Shaped Arena",
+      after: [],
+      ready: () => familiarWeight($familiar`Grey Goose`) < 6 && myMeat() >= 100,
+      completed: () => false,
+      priority: () => OverridePriority.BadGoose,
+      do: () => {
+        // TODO: Does this optimally get exp?
+        cliExecute("train turns 1");
+      },
+      outfit: { familiar: $familiar`Grey Goose`, modifier: "familiar exp" },
+      freeaction: true,
+      limit: { soft: 50 },
+    },
+    {
+      name: "Amulet Coin",
+      after: [],
+      completed: () =>
+        have($item`amulet coin`) ||
+        !have($skill`Summon Clip Art`) ||
+        get("tomeSummons") >= 3 ||
+        !have($familiar`Cornbeefadon`),
+      priority: () => OverridePriority.Free,
+      do: () => {
+        retrieveItem($item`box of Familiar Jacks`);
+        use($item`box of Familiar Jacks`);
+      },
+      outfit: { familiar: $familiar`Cornbeefadon` },
+      limit: { tries: 1 },
+    },
+    {
+      name: "Boombox",
+      after: [],
+      priority: () => OverridePriority.Free,
+      completed: () =>
+        !have($item`SongBoom™ BoomBox`) || get("boomBoxSong") === "Food Vibrations",
+      do: () => cliExecute("boombox food"),
+      limit: { tries: 1 },
+    },
   ],
 };
 
