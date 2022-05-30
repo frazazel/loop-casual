@@ -57,7 +57,6 @@ function buildIotmList(): Requirement[] {
         "Cold medicine cabinet"
       ),
       why: "QoL Equipment",
-      optional: true,
     },
     {
       thing: $item`fresh coat of paint`,
@@ -126,10 +125,12 @@ function buildIotmList(): Requirement[] {
         "Cosmic bowling ball"
       ),
       why: "Banishes, Pygmy killing",
+      optional: true,
     },
     {
       thing: $familiar`Vampire Vintner`,
       why: "Pygmy killing",
+      optional: true,
     },
     {
       thing: $skill`Summon Clip Art`,

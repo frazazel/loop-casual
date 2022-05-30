@@ -17,7 +17,7 @@ This script is not currently in a state where it will work for most users out of
 ### Usage
 
 1. In aftercore, run `loopgyou sim` to verify that the script is installed, and to confirm that you meet the requirements (see below for more details).
-2. Ascend into a Grey You Softcore run. Prefer the Vole sign until you have finished most of the path progression. Astral mask or astral belt are both useful, but neither is required. Prefer the cold medicine cabinet for your workshed and candles for your eurdora.
+2. Ascend into a Grey You Softcore run. The cold medicine cabinet is required in your workshed. Prefer the Vole sign until you have finished most of the path progression. Astral mask or astral belt are both useful, but neither is required. Prefer candles for your eurdora.
 3. Run `loopgyou` and watch it go! If you are more hesitent, you can run `loopgyou actions 10` to only do 10 things and stop. Run `loopgyou help` for the full set of script options.
 
 ### Will this script work for me?
@@ -29,12 +29,11 @@ Run `loopgyou sim` to see "Is the script intended to work unmodified on my chara
 Checking your character... Legend: ✓ Have / X Missing & Required / X Missing & Optional
 IoTMs
 ✓ backup camera - Lobsterfrogmen, ML, init
-✓ bottled Vampire Vintner - Pygmy killing
 ✓ Clan VIP Lounge key - YRs, -combat
+✓ Cold medicine cabinet - QoL Equipment
 ✓ combat lover's locket - Reminiscing
 ✓ combat lover's locket (Mountain man) - Reminiscing for Ore
 ✓ combat lover's locket (Pygmy witch lawyer locketed) - Reminiscing for Infinite Loop
-✓ Cosmic bowling ball - Banishes, Pygmy killing
 ✓ grey gosling - Adventures
 ✓ industrial fire extinguisher - Ultrahydrated
 ✓ shortest-order cook - Kill the Wall of Skin, initial exp
@@ -43,8 +42,9 @@ IoTMs
 
 IoTMs (Optional)
 ✓ baby camelCalf - Desert progress
+✓ bottled Vampire Vintner - Pygmy killing
 ✓ Cargo Cultist Shorts - War outfit
-✓ Cold medicine cabinet - QoL Equipment
+✓ Cosmic bowling ball - Banishes, Pygmy killing
 ✓ cursed magnifying glass - Lobsterfrogmen, delay
 ✓ Deck of Every Card - Get a key for the NS tower
 ✓ fresh coat of paint - Minor boosts in moxie sign
