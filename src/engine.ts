@@ -72,7 +72,8 @@ import {
 } from "./resources";
 import { AbsorptionTargets } from "./tasks/absorb";
 import { Prioritization } from "./priority";
-import { args, ponderPrediction } from "./main";
+import { args } from "./main";
+import { ponderPrediction } from "./lib";
 import { flyersDone } from "./tasks/level12";
 
 export class Engine {
@@ -332,6 +333,8 @@ export class Engine {
 
     if (task.completed()) {
       debug(`${task.name} completed!`, "blue");
+    } else if (!(task.ready?.() ?? true)) {
+      debug(`${task.name} not completed! [Again? Not ready]`, "blue");
     } else {
       const priority_explain = new Prioritization(
         task,

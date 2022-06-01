@@ -50,34 +50,52 @@ export class Prioritization {
     if (task.do instanceof Location && orb_predictions !== undefined) {
       const next_monster = orb_predictions.get(task.do);
       if (next_monster !== undefined) {
-        const task_combat = task.combat ?? new CombatStrategy();
-        const next_monster_strategy = task_combat.currentStrategy(next_monster);
         this.orb_monster = next_monster;
-        const next_useless =
-          (next_monster_strategy === MonsterStrategy.Ignore ||
-            next_monster_strategy === MonsterStrategy.IgnoreNoBanish ||
-            next_monster_strategy === MonsterStrategy.Banish) &&
-          !absorptionTargets.isTarget(next_monster) &&
-          (!absorptionTargets.isReprocessTarget(next_monster) ||
-            familiarWeight($familiar`Grey Goose`) < 6);
+        if (task.orbtargets === undefined) {
+          // Determine if a monster is useful or not based on the combat goals
+          const task_combat = task.combat ?? new CombatStrategy();
+          const next_monster_strategy = task_combat.currentStrategy(next_monster);
 
-        const others_useless =
-          task_combat.can(MonsterStrategy.Ignore) ||
-          task_combat.can(MonsterStrategy.IgnoreNoBanish) ||
-          task_combat.can(MonsterStrategy.Banish);
+          const next_useless =
+            (next_monster_strategy === MonsterStrategy.Ignore ||
+              next_monster_strategy === MonsterStrategy.IgnoreNoBanish ||
+              next_monster_strategy === MonsterStrategy.Banish) &&
+            !absorptionTargets.isTarget(next_monster) &&
+            (!absorptionTargets.isReprocessTarget(next_monster) ||
+              familiarWeight($familiar`Grey Goose`) < 6);
 
-        const others_useful =
-          absorptionTargets.hasTargets(task.do) ||
-          absorptionTargets.hasReprocessTargets(task.do) ||
-          task_combat.can(MonsterStrategy.Kill) ||
-          task_combat.can(MonsterStrategy.KillFree) ||
-          task_combat.can(MonsterStrategy.KillHard) ||
-          task_combat.can(MonsterStrategy.KillItem);
+          const others_useless =
+            task_combat.can(MonsterStrategy.Ignore) ||
+            task_combat.can(MonsterStrategy.IgnoreNoBanish) ||
+            task_combat.can(MonsterStrategy.Banish);
 
-        if (next_useless && others_useful) {
-          this.priorities.add(OverridePriority.BadOrb);
-        } else if (!next_useless && others_useless) {
-          this.priorities.add(OverridePriority.GoodOrb);
+          const others_useful =
+            absorptionTargets.hasTargets(task.do) ||
+            absorptionTargets.hasReprocessTargets(task.do) ||
+            task_combat.can(MonsterStrategy.Kill) ||
+            task_combat.can(MonsterStrategy.KillFree) ||
+            task_combat.can(MonsterStrategy.KillHard) ||
+            task_combat.can(MonsterStrategy.KillItem);
+
+          if (next_useless && others_useful) {
+            this.priorities.add(OverridePriority.BadOrb);
+          } else if (!next_useless && others_useless) {
+            this.priorities.add(OverridePriority.GoodOrb);
+          }
+        } else {
+          // Use orbtargets to decide if the next monster is useful
+          const targets = [
+            ...task.orbtargets(),
+            ...absorptionTargets.remainingAbsorbs(task.do),
+            ...absorptionTargets.remainingReprocess(task.do),
+          ];
+          if (targets.length > 0) {
+            if (targets.find((t) => t === next_monster) === undefined) {
+              this.priorities.add(OverridePriority.BadOrb);
+            } else {
+              this.priorities.add(OverridePriority.GoodOrb);
+            }
+          }
         }
       }
     }
@@ -142,12 +160,8 @@ export class Prioritization {
 }
 
 function needsChargedGoose(task: Task, absorptionTargets: AbsorptionTargets): boolean {
-  if (task.do instanceof Location && absorptionTargets.hasReprocessTargets(task.do)) {
-    const outfit_spec = typeof task.outfit === "function" ? task.outfit() : task.outfit;
-    if (!outfit_spec) return true;
-    if (outfit_spec.familiar === $familiar`Grey Goose`) return true;
-    if (!outfit_spec.familiar && (!outfit_spec.modifier || !outfit_spec.modifier.includes("meat")))
-      return true;
-  }
-  return false;
+  // Note that we purposefully do not check if we will be equipping the goose
+  // in the location. We want to eventually reprocess everything, and so a
+  // charged goose allows us to use the orb to target reprocess monsters.
+  return task.do instanceof Location && absorptionTargets.hasReprocessTargets(task.do);
 }

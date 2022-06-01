@@ -14,6 +14,7 @@ import {
   $items,
   $location,
   $monster,
+  $monsters,
   $slots,
   get,
   have,
@@ -88,7 +89,7 @@ const heroKeys: KeyTask[] = [
           return 2;
         if (have($item`skeleton key`) && get("nsTowerDoorKeysUsed").includes("skeleton key"))
           return 2;
-        return 3;
+        return 4;
       },
       693: () => (have($item`eleven-foot pole`) ? 2 : 1),
     },
@@ -129,7 +130,7 @@ const heroKeys: KeyTask[] = [
           return 2;
         if (have($item`skeleton key`) && get("nsTowerDoorKeysUsed").includes("skeleton key"))
           return 2;
-        return 3;
+        return 4;
       },
       693: () => (have($item`eleven-foot pole`) ? 2 : 1),
     },
@@ -308,6 +309,21 @@ export const KeysQuest: Quest = {
       outfit: { modifier: "item" },
       combat: new CombatStrategy().kill($monster`Astronomer`).killItem(),
       limit: { soft: 20 },
+      orbtargets: () => (have($item`star chart`) ? [$monster`Astronomer`] : []),
+    },
+    {
+      name: "Skeleton Key",
+      after: ["Crypt/Nook Boss"],
+      completed: () =>
+        (have($item`skeleton bone`) && have($item`loose teeth`)) ||
+        have($item`skeleton key`) ||
+        get("nsTowerDoorKeysUsed").includes("skeleton key"),
+      outfit: { modifier: "item" },
+      combat: new CombatStrategy()
+        .killItem(...$monsters`factory-irregular skeleton, remaindered skeleton, swarm of skulls`)
+        .banish($monster`novelty tropical skeleton`),
+      do: $location`The Skeleton Store`,
+      limit: { soft: 10 },
     },
   ],
 };

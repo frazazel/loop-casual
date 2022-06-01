@@ -1,5 +1,5 @@
 import { buyUsingStorage, cliExecute, Item, itemAmount, storageAmount } from "kolmafia";
-import { $item, $items, get, have } from "libram";
+import { $familiar, $item, $items, get, have } from "libram";
 import { args } from "../main";
 import { OverridePriority } from "../priority";
 import { Quest, step, Task } from "./structure";
@@ -28,7 +28,14 @@ export const pulls: PullSpec[] = [
   { pull: $item`ninja rope` },
   { pull: $item`ninja carabiner` },
   { pull: $item`ninja crampons` },
-  { pull: $item`wet stew` },
+  {
+    pull: $item`wet stew`,
+    useful: () =>
+      step("questL11Palindome") < 5 &&
+      !have($item`wet stunt nut stew`) &&
+      !have($item`wet stew`) &&
+      (!have($item`lion oil`) || !have($item`bird rib`)),
+  },
   {
     pull: $item`Mohawk wig`,
     useful: () => (have($item`S.O.C.K.`) ? !have($item`Mohawk wig`) : undefined), // if one didn't drop naturally
@@ -36,7 +43,7 @@ export const pulls: PullSpec[] = [
   { pull: $items`Space Trip safety headphones, HOA regulation book`, name: "-ML", optional: true },
   { pull: $item`yule hatchet` },
   { pull: $item`grey down vest` },
-  { pull: $item`killing jar` },
+  { pull: $item`killing jar`, useful: () => !have($familiar`Melodramedary`) },
   { pull: $item`old patched suit-pants`, optional: true },
   { pull: $item`transparent pants`, optional: true },
   { pull: $item`deck of lewd playing cards`, optional: true },

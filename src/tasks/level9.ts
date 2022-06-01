@@ -46,6 +46,7 @@ const ABoo: Task[] = [
     name: "ABoo Clues",
     after: ["ABoo Start"],
     completed: () => itemAmount($item`A-Boo clue`) * 30 >= get("booPeakProgress"),
+    ready: () => !get("_loopgyou_clue_used", false),
     do: $location`A-Boo Peak`,
     outfit: { modifier: "item", equip: $items`Space Trip safety headphones, HOA regulation book` },
     combat: new CombatStrategy()
@@ -58,11 +59,11 @@ const ABoo: Task[] = [
   },
   {
     name: "ABoo Horror",
-    after: ["ABoo Clues"],
+    after: ["ABoo Start"],
     ready: () => have($item`A-Boo clue`) || get("_loopgyou_clue_used", false),
     completed: () => get("booPeakProgress") === 0,
     priority: () =>
-      get("_loopgyou_clue_used", true) ? OverridePriority.Always : OverridePriority.None,
+      get("_loopgyou_clue_used", false) ? OverridePriority.Always : OverridePriority.None,
     prepare: () => {
       if (!get("_loopgyou_clue_used", false)) use($item`A-Boo clue`);
       if (myHp() < myMaxhp()) {
@@ -72,10 +73,8 @@ const ABoo: Task[] = [
     },
     do: $location`A-Boo Peak`,
     post: () => {
-      if (get("lastEncounter") !== "The Horror...") {
+      if (get("lastEncounter") === "Wooof! Wooooooof!") {
         set("_loopgyou_clue_used", true); // A ghost-dog adventure ate the ABoo Horror; we can just try again
-      } else if (get("_loopgyou_clue_used")) {
-        set("_loopgyou_clue_used", false);
       }
     },
     effects: $effects`Red Door Syndrome`,

@@ -1,4 +1,13 @@
-import { buy, cliExecute, itemAmount, myMeat, runChoice, use, visitUrl } from "kolmafia";
+import {
+  buy,
+  cliExecute,
+  familiarWeight,
+  itemAmount,
+  myMeat,
+  runChoice,
+  use,
+  visitUrl,
+} from "kolmafia";
 import {
   $coinmaster,
   $effect,
@@ -17,7 +26,8 @@ import {
 import { OutfitSpec, Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 import { CombatStrategy } from "../combat";
-import { atLevel } from "../lib";
+import { atLevel, ponderPrediction } from "../lib";
+import { absorptionTargets } from "./absorb";
 
 const Diary: Task[] = [
   {
@@ -111,6 +121,13 @@ const Desert: Task[] = [
       get("desertExploration") >= 100 ||
       have($item`drum machine`) ||
       (get("gnasirProgress") & 16) !== 0,
+    prepare: () => {
+      if (absorptionTargets.hasReprocessTargets($location`The Oasis`)) {
+        // Use ghost dog chow to prepare to reprocess Blur without needing arena adventures
+        while (familiarWeight($familiar`Grey Goose`) < 6 && have($item`Ghost Dog Chow`))
+          use($item`Ghost Dog Chow`);
+      }
+    },
     do: $location`The Oasis`,
     combat: new CombatStrategy().killItem($monster`blur`),
     outfit: { modifier: "item" },
@@ -118,7 +135,10 @@ const Desert: Task[] = [
     post: (): void => {
       if (!$location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time"))
         return;
-      if (itemAmount($item`worm-riding manual page`) >= 15) {
+      if (
+        itemAmount($item`worm-riding manual page`) >= 15 ||
+        ((get("gnasirProgress") & 1) === 0 && have($item`stone rose`))
+      ) {
         let res = visitUrl("place.php?whichplace=desertbeach&action=db_gnasir");
         while (res.includes("value=2")) {
           res = runChoice(2);
@@ -132,14 +152,12 @@ const Desert: Task[] = [
   {
     name: "Desert",
     after: ["Diary", "Compass"],
-    acquire: [
-      { item: $item`can of black paint`, useful: () => (get("gnasirProgress") & 2) === 0 },
-      { item: $item`killing jar`, useful: () => (get("gnasirProgress") & 4) === 0 },
-    ],
+    acquire: [{ item: $item`can of black paint`, useful: () => (get("gnasirProgress") & 2) === 0 }],
     ready: () =>
       itemAmount($item`worm-riding manual page`) < 15 &&
       !have($item`worm-riding hooks`) &&
-      (!have($effect`A Girl Named Sue`) || have($effect`Ultrahydrated`)),
+      ((get("desertExploration") === 0 && !have($effect`A Girl Named Sue`)) ||
+        have($effect`Ultrahydrated`)),
     priority: () =>
       have($effect`Ultrahydrated`) ? OverridePriority.Effect : OverridePriority.None,
     completed: () => get("desertExploration") >= 100,
@@ -155,7 +173,28 @@ const Desert: Task[] = [
           equip: $items`industrial fire extinguisher, UV-resistant compass, dromedary drinking helmet`,
           familiar: $familiar`Melodramedary`,
         };
-      else
+      else if (
+        absorptionTargets.isReprocessTarget($monster`swarm of fire ants`) &&
+        familiarWeight($familiar`Grey Goose`) >= 6 &&
+        have($item`miniature crystal ball`)
+      ) {
+        if (
+          ponderPrediction().get($location`The Arid, Extra-Dry Desert`) ===
+          $monster`swarm of fire ants`
+        ) {
+          // Swoop in for a single adventure to reprocess the fire ants
+          return {
+            equip: $items`UV-resistant compass, miniature crystal ball`,
+            familiar: $familiar`Grey Goose`,
+          };
+        } else {
+          // Wait for the orb to predict swarm of fire ants
+          return {
+            equip: $items`UV-resistant compass, miniature crystal ball`,
+            familiar: $familiar`Melodramedary`,
+          };
+        }
+      } else
         return {
           equip: $items`UV-resistant compass, dromedary drinking helmet`,
           familiar: $familiar`Melodramedary`,
@@ -179,8 +218,9 @@ const Desert: Task[] = [
       if ((get("gnasirProgress") & 16) > 0) return;
       if (
         itemAmount($item`worm-riding manual page`) >= 15 ||
-        (get("gnasirProgress") & 2) === 0 ||
-        (get("gnasirProgress") & 4) === 0
+        ((get("gnasirProgress") & 1) === 0 && have($item`stone rose`)) ||
+        ((get("gnasirProgress") & 2) === 0 && have($item`can of black paint`)) ||
+        ((get("gnasirProgress") & 4) === 0 && have($item`killing jar`))
       ) {
         let res = visitUrl("place.php?whichplace=desertbeach&action=db_gnasir");
         while (res.includes("value=2")) {
@@ -192,7 +232,6 @@ const Desert: Task[] = [
       if (have($item`worm-riding hooks`) && have($item`drum machine`)) use($item`drum machine`);
     },
     limit: { soft: 30 },
-    delay: 35,
     choices: { 805: 1 },
   },
 ];

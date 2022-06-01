@@ -1,4 +1,4 @@
-import { Effect, Familiar, Item, Location } from "kolmafia";
+import { Effect, Familiar, Item, Location, Monster } from "kolmafia";
 import { get } from "libram";
 import { StringProperty } from "libram/dist/propertyTypes";
 import { CombatStrategy } from "../combat";
@@ -28,6 +28,7 @@ export interface OutfitSpec {
   equip?: Item[]; // Items to be equipped in any slot
   modifier?: string; // Modifier to maximize
   familiar?: Familiar; // Familiar to use
+  avoid?: Item[]; // Items that cause issues and so should not be equipped
 }
 
 export type Task = {
@@ -48,6 +49,11 @@ export type Task = {
   freeaction?: boolean | (() => boolean);
   freecombat?: boolean;
   limit: Limit;
+
+  // The monsters to search for with orb.
+  // In addition, absorb targets are always searched with the orb.
+  // If not given, monsters to search for are based on the CombatStrategy
+  orbtargets?: () => Monster[];
 };
 
 export function step(questName: StringProperty): number {
