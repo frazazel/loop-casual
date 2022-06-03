@@ -20,6 +20,7 @@ import {
   $items,
   $location,
   $monsters,
+  $skill,
   $stat,
   ensureEffect,
   get,
@@ -31,6 +32,7 @@ import { Quest, step, Task } from "./structure";
 import { CombatStrategy } from "../combat";
 import { atLevel } from "../lib";
 import { OverridePriority } from "../priority";
+import { councilSafe } from "./level12";
 
 const ABoo: Task[] = [
   {
@@ -85,7 +87,7 @@ const ABoo: Task[] = [
   },
   {
     name: "ABoo Peak",
-    after: ["ABoo Horror"],
+    after: ["ABoo Clues", "ABoo Horror"],
     completed: () => get("booPeakLit"),
     do: $location`A-Boo Peak`,
     limit: { tries: 1 },
@@ -264,14 +266,18 @@ export const ChasmQuest: Quest = {
       completed: () => step("questL09Topping") !== -1,
       do: () => visitUrl("council.php"),
       limit: { tries: 1 },
-      priority: () => OverridePriority.Free,
+      priority: () => (councilSafe() ? OverridePriority.Free : OverridePriority.BadMood),
       freeaction: true,
     },
     {
       name: "Bridge",
       after: ["Start", "Macguffin/Forest"], // Wait for black paint
       ready: () =>
-        get("smutOrcNoncombatProgress") < 15 ||
+        ((have($item`frozen jeans`) ||
+          have($skill`Cryocurrency`) ||
+          have($skill`Cooling Tubules`) ||
+          have($skill`Snow-Cooling System`)) &&
+          get("smutOrcNoncombatProgress") < 15) ||
         ((have($effect`Red Door Syndrome`) || myMeat() >= 1000) && myBasestat($stat`Moxie`) >= 400),
       completed: () => step("questL09Topping") >= 1,
       prepare: () => {

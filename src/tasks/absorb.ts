@@ -5,6 +5,7 @@ import {
   equippedAmount,
   equippedItem,
   familiarWeight,
+  getWorkshed,
   gnomadsAvailable,
   itemAmount,
   knollAvailable,
@@ -258,7 +259,7 @@ const absorbTasks: AbsorbTask[] = [
     do: $location`The Castle in the Clouds in the Sky (Basement)`,
     after: ["Giant/Basement Finish"],
     outfit: { modifier: "+combat", equip: $items`miniature crystal ball` },
-    choices: { 670: 5, 669: 1, 671: 3 },
+    choices: { 670: 3, 669: 1, 671: 3 },
   },
   {
     do: $location`The Castle in the Clouds in the Sky (Ground Floor)`,
@@ -466,7 +467,7 @@ const absorbTasks: AbsorbTask[] = [
   // These are probably only worthwhile with orb
   {
     do: $location`South of the Border`,
-    after: ["Misc/Unlock Beach"],
+    after: ["Misc/Unlock Beach", "Absorb/Whitey's Grove"],
     choices: { 4: 3 },
     outfit: { modifier: "+combat", equip: $items`miniature crystal ball` },
   },
@@ -858,6 +859,17 @@ export class AbsorptionTargets {
   }
 
   public ignoreUselessAbsorbs(): void {
+    // We need a single +cold dmg source for orcs
+    const neededAnyway = new Set<Skill>();
+    if (
+      !have($item`frozen jeans`) &&
+      !have($skill`Cryocurrency`) &&
+      !have($skill`Cooling Tubules`) &&
+      (getWorkshed() !== $item`cold medicine cabinet` || get("_coldMedicineConsults") === 5)
+    ) {
+      neededAnyway.add($skill`Snow-Cooling System`);
+    }
+
     // Ignore the elemental skills that are not useful for the tower
     const needed_elem_skills: { [elem: string]: Skill[] } = {
       hot: $skills`Microburner, Infernal Automata, Steam Mycelia`,
@@ -869,7 +881,7 @@ export class AbsorptionTargets {
     for (const elem in needed_elem_skills) {
       if (get("nsChallenge2") !== elem) {
         for (const unneeded_skill of needed_elem_skills[elem]) {
-          this.markObtained(unneeded_skill);
+          if (!neededAnyway.has(unneeded_skill)) this.markObtained(unneeded_skill);
         }
       }
     }

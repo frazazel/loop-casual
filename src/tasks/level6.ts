@@ -3,6 +3,7 @@ import { $item, $items, $location, $monsters, $skill, have } from "libram";
 import { CombatStrategy } from "../combat";
 import { atLevel } from "../lib";
 import { OverridePriority } from "../priority";
+import { councilSafe } from "./level12";
 import { Quest, step } from "./structure";
 
 export const FriarQuest: Quest = {
@@ -15,7 +16,7 @@ export const FriarQuest: Quest = {
       completed: () => step("questL06Friar") !== -1,
       do: () => visitUrl("council.php"),
       limit: { tries: 1 },
-      priority: () => OverridePriority.Free,
+      priority: () => (councilSafe() ? OverridePriority.Free : OverridePriority.BadMood),
       freeaction: true,
     },
     {
@@ -24,7 +25,7 @@ export const FriarQuest: Quest = {
       completed: () => have($item`box of birthday candles`) || step("questL06Friar") === 999,
       do: $location`The Dark Heart of the Woods`,
       outfit: { modifier: "-combat" },
-      limit: { tries: 17 },
+      limit: { tries: 20 },
     },
     {
       name: "Neck",
@@ -33,7 +34,7 @@ export const FriarQuest: Quest = {
       do: $location`The Dark Neck of the Woods`,
       outfit: { modifier: "-combat" },
       choices: { 1428: 2 },
-      limit: { tries: 17 },
+      limit: { tries: 20 },
     },
     {
       name: "Elbow",
@@ -41,7 +42,7 @@ export const FriarQuest: Quest = {
       completed: () => have($item`eldritch butterknife`) || step("questL06Friar") === 999,
       do: $location`The Dark Elbow of the Woods`,
       outfit: { modifier: "-combat" },
-      limit: { tries: 17 },
+      limit: { tries: 20 },
     },
     {
       name: "Finish",

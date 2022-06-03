@@ -1,10 +1,22 @@
 import { cliExecute, Item, myBasestat, visitUrl } from "kolmafia";
-import { $item, $location, $monster, $monsters, $skill, $stat, get, have, Macro } from "libram";
+import {
+  $item,
+  $items,
+  $location,
+  $monster,
+  $monsters,
+  $skill,
+  $stat,
+  get,
+  have,
+  Macro,
+} from "libram";
 import { OutfitSpec, Quest, step, Task } from "./structure";
 import { CombatStrategy } from "../combat";
 import { atLevel } from "../lib";
 import { absorptionTargets } from "./absorb";
 import { OverridePriority } from "../priority";
+import { councilSafe } from "./level12";
 
 function tuneCape(): void {
   if (
@@ -55,7 +67,7 @@ const Alcove: Task[] = [
   {
     name: "Alcove Boss",
     after: ["Alcove"],
-    completed: () => get("cyrptAlcoveEvilness") === 0,
+    completed: () => get("cyrptAlcoveEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Alcove`,
     combat: new CombatStrategy(true).kill(),
     limit: { tries: 1 },
@@ -89,7 +101,7 @@ const Cranny: Task[] = [
   {
     name: "Cranny Boss",
     after: ["Cranny"],
-    completed: () => get("cyrptCrannyEvilness") === 0,
+    completed: () => get("cyrptCrannyEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Cranny`,
     combat: new CombatStrategy(true).killHard(),
     limit: { tries: 1 },
@@ -112,11 +124,7 @@ const Niche: Task[] = [
         !get("fireExtinguisherCyrptUsed")
       )
         return {
-          equip: tryCape(
-            $item`antique machete`,
-            $item`gravy boat`,
-            $item`industrial fire extinguisher`
-          ),
+          equip: $items`gravy boat, industrial fire extinguisher`,
         };
       else
         return {
@@ -136,7 +144,7 @@ const Niche: Task[] = [
   {
     name: "Niche Boss",
     after: ["Niche"],
-    completed: () => get("cyrptNicheEvilness") === 0,
+    completed: () => get("cyrptNicheEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Niche`,
     combat: new CombatStrategy(true).kill(),
     limit: { tries: 1 },
@@ -164,7 +172,7 @@ const Nook: Task[] = [
     combat: new CombatStrategy()
       .macro(slay_macro, ...$monsters`spiny skelelton, toothy sklelton`)
       .banish($monster`party skelteon`),
-    limit: { soft: 15 },
+    limit: { soft: 25 },
   },
   {
     name: "Nook Eye", // In case we get eyes from outside sources (Nostalgia)
@@ -180,7 +188,7 @@ const Nook: Task[] = [
   {
     name: "Nook Boss",
     after: ["Nook", "Nook Eye"],
-    completed: () => get("cyrptNookEvilness") === 0,
+    completed: () => get("cyrptNookEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Nook`,
     combat: new CombatStrategy(true).killItem(),
     limit: { tries: 1 },
@@ -197,7 +205,7 @@ export const CryptQuest: Quest = {
       completed: () => step("questL07Cyrptic") !== -1,
       do: () => visitUrl("council.php"),
       limit: { tries: 1 },
-      priority: () => OverridePriority.Free,
+      priority: () => (councilSafe() ? OverridePriority.Free : OverridePriority.BadMood),
       freeaction: true,
     },
     ...Alcove,
@@ -206,7 +214,7 @@ export const CryptQuest: Quest = {
     ...Nook,
     {
       name: "Bonerdagon",
-      after: ["Alcove Boss", "Cranny Boss", "Niche Boss", "Nook Boss"],
+      after: ["Start", "Alcove Boss", "Cranny Boss", "Niche Boss", "Nook Boss"],
       completed: () => step("questL07Cyrptic") >= 1,
       do: $location`Haert of the Cyrpt`,
       choices: { 527: 1 },
@@ -215,7 +223,8 @@ export const CryptQuest: Quest = {
     },
     {
       name: "Finish",
-      after: ["Bonerdagon"],
+      after: ["Start", "Bonerdagon"],
+      priority: () => (councilSafe() ? OverridePriority.Free : OverridePriority.BadMood),
       completed: () => step("questL07Cyrptic") === 999,
       do: () => visitUrl("council.php"),
       limit: { tries: 1 },

@@ -80,49 +80,64 @@ export function main(command?: string): void {
 
   const tasks = prioritize(all_tasks());
   const engine = new Engine(tasks, absorptionTargets);
-  cliExecute("ccs loopgyou");
-  setUniversalProperties(engine.propertyManager);
-
-  let actions_left = args.actions ?? Number.MAX_VALUE;
-  absorptionTargets.updateAbsorbed();
-  absorptionTargets.ignoreUselessAbsorbs();
-  if (actions_left < 0) {
-    for (const task of tasks) {
-      debug(
-        `${task.name}: ${
-          task.completed() ? "Done" : engine.available(task) ? "Available" : "Not Available"
-        }`,
-        task.completed() ? "blue" : engine.available(task) ? undefined : "red"
-      );
-    }
-  }
-
-  while (myAdventures() > 0) {
-    // Note order matters for these strategy updates
-    keyStrategy.update(); // Update key plan with current state
-    pullStrategy.update(); // Update pull plan with current state
-
-    const next = getNextTask(engine, tasks);
-    if (next === undefined) break;
-    if (actions_left <= 0) {
-      debug(`Next task: ${next[0].name}`);
-      return;
-    } else {
-      actions_left -= 1;
+  try {
+    let actions_left = args.actions ?? Number.MAX_VALUE;
+    absorptionTargets.updateAbsorbed();
+    absorptionTargets.ignoreUselessAbsorbs();
+    if (actions_left < 0) {
+      const orbPredictions = ponderPrediction();
+      for (const task of tasks) {
+        const priority = Prioritization.from(task, orbPredictions, absorptionTargets);
+        const reason = priority.explain();
+        const why = reason === "" ? "Route" : reason;
+        debug(
+          `${task.name}: ${
+            task.completed()
+              ? "Done"
+              : engine.available(task)
+              ? `Available [${priority.score()}: ${why}]`
+              : "Not Available"
+          }`,
+          task.completed() ? "blue" : engine.available(task) ? undefined : "red"
+        );
+      }
     }
 
-    if (next[2] !== undefined) engine.execute(next[0], next[1], next[2]);
-    else engine.execute(next[0], next[1]);
-    if (myPath() !== "Grey You") break; // Prism broken
-  }
-
-  const remaining_tasks = tasks.filter((task) => !task.completed());
-  if (!runComplete()) {
-    debug("Remaining tasks:", "red");
-    for (const task of remaining_tasks) {
-      if (!task.completed()) debug(`${task.name}`, "red");
+    // Do not bother to set properties if there are no tasks remaining
+    if (tasks.find((task) => !task.completed() && (task.ready?.() ?? true)) !== undefined) {
+      setUniversalProperties(engine.propertyManager);
+      cliExecute("ccs loopgyou");
     }
-    throw `Unable to find available task, but the run is not complete.`;
+
+    while (myAdventures() > 0) {
+      // Note order matters for these strategy updates
+      keyStrategy.update(); // Update key plan with current state
+      pullStrategy.update(); // Update pull plan with current state
+
+      const next = getNextTask(engine, tasks);
+      if (next === undefined) break;
+      if (actions_left <= 0) {
+        debug(`Next task: ${next[0].name}`);
+        return;
+      } else {
+        actions_left -= 1;
+      }
+
+      if (next[2] !== undefined) engine.execute(next[0], next[1], next[2]);
+      else engine.execute(next[0], next[1]);
+      if (myPath() !== "Grey You") break; // Prism broken
+    }
+
+    const remaining_tasks = tasks.filter((task) => !task.completed());
+    if (!runComplete()) {
+      debug("Remaining tasks:", "red");
+      for (const task of remaining_tasks) {
+        if (!task.completed()) debug(`${task.name}`, "red");
+      }
+      throw `Unable to find available task, but the run is not complete.`;
+    }
+  } finally {
+    engine.propertyManager.resetAll();
   }
 
   print("Grey you complete!", "purple");
@@ -239,6 +254,7 @@ function setUniversalProperties(propertyManager: PropertiesManager) {
     autoTuxedo: true,
     autoPinkyRing: true,
     autoGarish: true,
+    allowNonMoodBurning: false,
     allowSummonBurning: true,
     libramSkillsSoftcore: "none",
   });
