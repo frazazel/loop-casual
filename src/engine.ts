@@ -71,7 +71,7 @@ import {
   wandererSources,
 } from "./resources";
 import { AbsorptionTargets } from "./tasks/absorb";
-import { Prioritization } from "./priority";
+import { OverridePriority, Prioritization } from "./priority";
 import { args } from "./main";
 import { ponderPrediction } from "./lib";
 import { flyersDone } from "./tasks/level12";
@@ -112,9 +112,11 @@ export class Engine {
     return task.do.turnsSpent < task.delay;
   }
 
-  public execute(task: Task, why: string, ...wanderers: WandererSource[]): void {
+  public execute(task: Task, priority: Prioritization, ...wanderers: WandererSource[]): void {
     debug(``);
-    debug(`Executing ${task.name} ${why}`, "blue");
+    const reason = priority.explain();
+    const why = reason === "" ? "Route" : reason;
+    debug(`Executing ${task.name} [${why}]`, "blue");
     this.check_limits(task);
 
     // Get needed items
@@ -213,8 +215,17 @@ export class Engine {
       const combat_resources = new CombatResourceAllocation();
       if (wanderers.length === 0) {
         // Set up a banish if needed
-        const banishSources = unusedBanishes(task_combat.where(MonsterStrategy.Banish));
+        const [banishSources, toBanish] = unusedBanishes(task_combat.where(MonsterStrategy.Banish));
         combat_resources.banishWith(outfit.equipFirst(banishSources));
+
+        // Equip an orb if we have a good target.
+        // (If we have banished all the bad targets, there is no need to force an orb)
+        if (
+          priority.has(OverridePriority.GoodOrb) &&
+          (toBanish.length > 0 || !task_combat.can(MonsterStrategy.Banish))
+        ) {
+          outfit.equip($item`miniature crystal ball`);
+        }
 
         // Set up a runaway if there are combats we do not care about
         let runaway = undefined;
@@ -336,7 +347,7 @@ export class Engine {
     } else if (!(task.ready?.() ?? true)) {
       debug(`${task.name} not completed! [Again? Not ready]`, "blue");
     } else {
-      const priority_explain = new Prioritization(
+      const priority_explain = Prioritization.from(
         task,
         ponderPrediction(),
         this.absorptionTargets
