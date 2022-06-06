@@ -336,7 +336,7 @@ export const MiscQuest: Quest = {
       name: "Acquire Firework Hat",
       after: [],
       priority: () => OverridePriority.Free,
-      completed: () => have($item`sombrero-mounted sparkler`),
+      completed: () => get("_fireworksShopHatBought"),
       do: () => {
         cliExecute("acquire sombrero-mounted sparkler");
       },
