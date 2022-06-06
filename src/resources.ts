@@ -41,6 +41,23 @@ const banishSources: BanishSource[] = [
     do: $skill`System Sweep`,
   },
   {
+    name: "Latte",
+    available: () =>
+      (!get("_latteBanishUsed") || get("_latteRefillsUsed") < 2) && // Save one refil for aftercore
+      have($item`latte lovers member's mug`),
+    prepare: (): void => {
+      if (get("_latteBanishUsed")) {
+        const modifiers = [];
+        if (get("latteUnlocks").includes("wing")) modifiers.push("wing");
+        if (get("latteUnlocks").includes("cajun")) modifiers.push("cajun");
+        modifiers.push("cinnamon", "pumpkin", "vanilla");
+        cliExecute(`latte refill ${modifiers.slice(0, 3).join(" ")}`); // Always unlocked
+      }
+    },
+    do: $skill`Throw Latte on Opponent`,
+    equip: $item`latte lovers member's mug`,
+  },
+  {
     name: "Reflex Hammer",
     available: () => get("_reflexHammerUsed") < 3 && have($item`Lil' Doctor™ bag`),
     do: $skill`Reflex Hammer`,
@@ -54,17 +71,6 @@ const banishSources: BanishSource[] = [
     equip: $item`Kremlin's Greatest Briefcase`,
   },
   {
-    name: "Latte",
-    available: () =>
-      (!get("_latteBanishUsed") || get("_latteRefillsUsed") < 2) && // Save one refil for aftercore
-      have($item`latte lovers member's mug`),
-    prepare: (): void => {
-      if (get("_latteBanishUsed")) cliExecute("latte refill cinnamon pumpkin vanilla"); // Always unlocked
-    },
-    do: $skill`Throw Latte on Opponent`,
-    equip: $item`latte lovers member's mug`,
-  },
-  {
     name: "Middle Finger",
     available: () => !get("_mafiaMiddleFingerRingUsed") && have($item`mafia middle finger ring`),
     do: $skill`Show them your ring`,
@@ -73,22 +79,12 @@ const banishSources: BanishSource[] = [
 ];
 
 export class BanishState {
-  already_banished = new Map<Monster, Item | Skill>();
-  used_banishes = new Set<Item | Skill>();
+  already_banished: Map<Monster, Item | Skill>;
 
-  // Record all banishes that are committed to an active task
-  constructor(tasks: Task[]) {
+  constructor() {
     this.already_banished = new Map(
       Array.from(getBanishedMonsters(), (entry) => [entry[1], entry[0]])
     );
-
-    for (const task of tasks) {
-      if (task.combat === undefined) continue;
-      for (const monster of task.combat.where(MonsterStrategy.Banish)) {
-        const banished_with = this.already_banished.get(monster);
-        if (banished_with !== undefined) this.used_banishes.add(banished_with);
-      }
-    }
   }
 
   // Return true if some of the monsters in the task are banished
@@ -96,7 +92,11 @@ export class BanishState {
     return (
       task.combat
         ?.where(MonsterStrategy.Banish)
-        ?.find((monster) => this.already_banished.has(monster)) !== undefined
+        ?.find(
+          (monster) =>
+            this.already_banished.has(monster) &&
+            this.already_banished.get(monster) !== $item`ice house`
+        ) !== undefined
     );
   }
 
@@ -110,10 +110,17 @@ export class BanishState {
   }
 
   // Return a list of all banishes not allocated to some available task
-  unusedBanishes(): BanishSource[] {
-    return banishSources.filter(
-      (banish) => banish.available() && !this.used_banishes.has(banish.do)
-    );
+  unusedBanishes(tasks: Task[]): BanishSource[] {
+    const used_banishes = new Set<Item | Skill>();
+    for (const task of tasks) {
+      if (task.combat === undefined) continue;
+      for (const monster of task.combat.where(MonsterStrategy.Banish)) {
+        const banished_with = this.already_banished.get(monster);
+        if (banished_with !== undefined) used_banishes.add(banished_with);
+      }
+    }
+
+    return banishSources.filter((banish) => banish.available() && !used_banishes.has(banish.do));
   }
 }
 
@@ -179,6 +186,29 @@ export const runawaySources: RunawaySource[] = [
     do: new Macro().skill($skill`Bowl a Curveball`),
     chance: () => 1,
     banishes: true,
+  },
+  {
+    name: "GAP",
+    available: () => have($item`Greatest American Pants`),
+    equip: $item`Greatest American Pants`,
+    do: new Macro().runaway(),
+    chance: () => (get("_navelRunaways") < 3 ? 1 : 0.2),
+    banishes: false,
+  },
+  {
+    name: "Navel Ring",
+    available: () => have($item`navel ring of navel gazing`),
+    equip: $item`navel ring of navel gazing`,
+    do: new Macro().runaway(),
+    chance: () => (get("_navelRunaways") < 3 ? 1 : 0.2),
+    banishes: false,
+  },
+  {
+    name: "Peppermint Parasol",
+    available: () => have($item`peppermint parasol`),
+    do: new Macro().item($item`peppermint parasol`),
+    chance: () => (get("_navelRunaways") < 3 ? 1 : 0.2),
+    banishes: false,
   },
 ];
 

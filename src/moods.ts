@@ -5,6 +5,7 @@ function getRelevantEffects(): { [modifier: string]: Effect[] } {
   const result: { [name: string]: Effect[] } = {
     "-combat": [],
     "+combat": [],
+    " combat": [], // Maximizer has issues with "50 +combat" and similar
     mainstat: [],
   };
 
@@ -21,12 +22,15 @@ function getRelevantEffects(): { [modifier: string]: Effect[] } {
     result["mainstat"].push($effect`Feeling Excited`);
   if (have($item`protonic accelerator pack`) && !get("_streamsCrossed"))
     result["mainstat"].push($effect`Total Protonic Reversal`);
+  if (!get("_olympicSwimmingPool") || have($effect`Silent Running`))
+    result["-combat"].push($effect`Silent Running`);
 
   // Noncombat/combat buffs
   if (have($skill`Phase Shift`)) result["-combat"].push($effect`Shifted Phase`);
   if (have($skill`Photonic Shroud`)) result["-combat"].push($effect`Darkened Photons`);
   if (have($skill`Piezoelectric Honk`)) result["+combat"].push($effect`Hooooooooonk!`);
 
+  result[" combat"] = result["+combat"];
   return result;
 }
 
@@ -40,7 +44,7 @@ export function moodCompatible(modifier: string | undefined): boolean {
   // Since shrugging is limited, ensure we do not attempt a +combat task
   // while under -combat effects, and vice-versa.
   if (modifier === undefined) return true;
-  if (modifier.includes("+combat")) {
+  if (modifier.includes("+combat") || modifier.includes(" combat")) {
     // eslint-disable-next-line libram/verify-constants
     return !have($effect`Shifted Phase`) && !have($effect`Darkened Photons`);
   }
@@ -63,7 +67,8 @@ export function applyEffects(modifier: string, required: Effect[]): void {
   }
 
   // Remove wrong combat effects
-  if (modifier.includes("+combat")) shrug(relevantEffects["-combat"]);
+  if (modifier.includes("+combat") || modifier.includes(" combat"))
+    shrug(relevantEffects["-combat"]);
   if (modifier.includes("-combat")) shrug(relevantEffects["+combat"]);
 
   // Apply all relevant effects

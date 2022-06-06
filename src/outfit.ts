@@ -16,6 +16,7 @@ import { $familiar, $item, $skill, $slot, $slots, $stat, get, have, Requirement 
 import { Task } from "./tasks/structure";
 import { canChargeVoid, Resource } from "./resources";
 import { Keys, keyStrategy } from "./tasks/keys";
+import { GameState } from "./state";
 
 // Adapted from phccs
 export class Outfit {
@@ -36,6 +37,10 @@ export class Outfit {
         if (this.accesories.length >= 3) return false;
         this.accesories.push(item);
         return true;
+      }
+      if (slot === $slot`off-hand`) {
+        const weapon = this.equips.get($slot`weapon`);
+        if (weapon && weaponHands(weapon) === 2) return false;
       }
       if (!this.equips.has(slot)) {
         this.equips.set(slot, item);
@@ -109,6 +114,10 @@ export class Outfit {
       if (slot === $slot`acc1`) {
         if (this.accesories.length >= 3) return false;
         return true;
+      }
+      if (slot === $slot`off-hand`) {
+        const weapon = this.equips.get($slot`weapon`);
+        if (weapon && weaponHands(weapon) === 2) return false;
       }
       if (!this.equips.has(slot)) {
         return true;
@@ -238,8 +247,8 @@ export class Outfit {
     }
   }
 
-  static create(task: Task): Outfit {
-    const spec = typeof task.outfit === "function" ? task.outfit() : task.outfit;
+  static create(task: Task, state: GameState): Outfit {
+    const spec = typeof task.outfit === "function" ? task.outfit(state) : task.outfit;
 
     const outfit = new Outfit();
     for (const item of spec?.equip ?? []) outfit.equip(item);
@@ -266,13 +275,16 @@ export class Outfit {
   }
 
   public equipCharging(): void {
+    if (this.modifier?.includes("-combat")) {
+      // Modifier plays strangely with the umbrella
+      this.equip($item`unbreakable umbrella`);
+    }
+
     if (familiarWeight($familiar`Grey Goose`) < 6) {
       if (this.equip($familiar`Grey Goose`)) {
         this.equip($item`yule hatchet`);
-        if (!this.modifier || !this.modifier.includes("-combat")) {
-          this.equip($item`ghostly reins`);
-          this.equip($item`familiar scrapbook`);
-        }
+        this.equip($item`ghostly reins`);
+        this.equip($item`familiar scrapbook`);
       }
     } else if (
       (!have($item`eleven-foot pole`) ||

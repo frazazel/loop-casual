@@ -26,9 +26,9 @@ import {
 import { OutfitSpec, Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 import { CombatStrategy } from "../combat";
-import { atLevel, ponderPrediction } from "../lib";
-import { absorptionTargets } from "./absorb";
+import { atLevel } from "../lib";
 import { councilSafe } from "./level12";
+import { GameState } from "../state";
 
 const Diary: Task[] = [
   {
@@ -40,16 +40,16 @@ const Diary: Task[] = [
     post: () => {
       if (have($effect`Really Quite Poisoned`)) uneffect($effect`Really Quite Poisoned`);
     },
-    outfit: () => {
+    outfit: (state: GameState) => {
       if (have($item`reassembled blackbird`)) {
         return {
           equip: $items`blackberry galoshes`,
           modifier: "+combat",
         };
       } else if (
-        absorptionTargets.isReprocessTarget($monster`black magic woman`) &&
+        state.absorb.isReprocessTarget($monster`black magic woman`) &&
         familiarWeight($familiar`Grey Goose`) >= 6 &&
-        ponderPrediction().get($location`The Black Forest`) === $monster`black magic woman`
+        state.orb.prediction($location`The Black Forest`) === $monster`black magic woman`
       ) {
         // Swoop in for a single adventure to reprocess the black magic woman
         return {
@@ -65,7 +65,12 @@ const Diary: Task[] = [
         };
       }
     },
-    choices: { 923: 1, 924: 1 },
+    choices: {
+      923: 1,
+      924: () => (have($familiar`Shorter-Order Cook`) || have($item`beehive`) ? 1 : 3),
+      1018: 1,
+      1019: 1,
+    },
     combat: new CombatStrategy()
       .ignore($monster`blackberry bush`)
       .killItem(...$monsters`black adder, black panther`)
@@ -134,8 +139,8 @@ const Desert: Task[] = [
       get("desertExploration") >= 100 ||
       have($item`drum machine`) ||
       (get("gnasirProgress") & 16) !== 0,
-    prepare: () => {
-      if (absorptionTargets.hasReprocessTargets($location`The Oasis`)) {
+    prepare: (state: GameState) => {
+      if (state.absorb.hasReprocessTargets($location`The Oasis`)) {
         // Use ghost dog chow to prepare to reprocess Blur without needing arena adventures
         while (familiarWeight($familiar`Grey Goose`) < 6 && have($item`Ghost Dog Chow`))
           use($item`Ghost Dog Chow`);
@@ -175,7 +180,7 @@ const Desert: Task[] = [
       have($effect`Ultrahydrated`) ? OverridePriority.Effect : OverridePriority.None,
     completed: () => get("desertExploration") >= 100,
     do: $location`The Arid, Extra-Dry Desert`,
-    outfit: (): OutfitSpec => {
+    outfit: (state: GameState): OutfitSpec => {
       if (
         have($item`industrial fire extinguisher`) &&
         get("_fireExtinguisherCharge") >= 20 &&
@@ -187,12 +192,12 @@ const Desert: Task[] = [
           familiar: $familiar`Melodramedary`,
         };
       else if (
-        absorptionTargets.isReprocessTarget($monster`swarm of fire ants`) &&
+        state.absorb.isReprocessTarget($monster`swarm of fire ants`) &&
         familiarWeight($familiar`Grey Goose`) >= 6 &&
         have($item`miniature crystal ball`)
       ) {
         if (
-          ponderPrediction().get($location`The Arid, Extra-Dry Desert`) ===
+          state.orb.prediction($location`The Arid, Extra-Dry Desert`) ===
           $monster`swarm of fire ants`
         ) {
           // Swoop in for a single adventure to reprocess the fire ants
@@ -340,7 +345,7 @@ const Pyramid: Task[] = [
     combat: new CombatStrategy(true)
       .macro(
         new Macro()
-          .trySkill($skill`Saucegeyser`)
+          .while_("!mpbelow 20", new Macro().trySkill($skill`Infinite Loop`))
           .attack()
           .repeat()
       )

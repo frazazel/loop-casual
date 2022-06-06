@@ -10,30 +10,28 @@ export const routing: string[] = [
   "Misc/Acquire Birch Battery",
   "Keys/Deck",
   "Pull/All",
-  "Misc/Dog Chow", // Eat if there are no other options
-  "Misc/Cake-Shaped Arena", // Arena if there are no charged options
 
   // Get infinite loop
   "McLargeHuge/Ore Mountain",
   "Misc/Locket Pygmy",
 
-  "Absorb/The Haunted Conservatory", // Get +meat early, we'll want a lot
+  "Absorb/Ponzi Apparatus", // Get +meat early, we'll want a lot
 
   // Get initial -combat
   "Knob/King",
-  "Absorb/Cobb's Knob Menagerie, Level 3",
+  "Absorb/Phase Shift",
   "McLargeHuge/Trapper Request", // open for absorbing
-  "Absorb/Cobb's Knob Menagerie, Level 2",
+  "Absorb/Fluid Dynamics Simulation",
 
   // ASAP once level 11 is hit, grab -combat
-  "Absorb/The Black Forest",
+  "Absorb/Photonic Shroud",
 
   // Grind tasks until level 11
   "Mosquito/Burn Delay",
   "Hidden City/Open Temple",
 
   // Get +item
-  "Absorb/Infernal Rackets Backstage",
+  "Absorb/Gravitational Compression",
   "Misc/Fortune",
 
   // Aim for remaining pygmies
@@ -45,7 +43,12 @@ export const routing: string[] = [
   // For MP regen, ASAP
   "Wand/Wand",
   "Misc/Hermit Clover",
-  "Absorb/The Dungeons of Doom",
+  "Absorb/Hivemindedness",
+
+  // Open Hidden City with Sue buff
+  "Hidden City/Open Office",
+  "Hidden City/Open Hospital",
+  "Hidden City/Open Apartment",
 
   // Line up -combats
   "Manor/Start Floor2",
@@ -56,11 +59,6 @@ export const routing: string[] = [
   "Palindome/Bat Snake",
   "Bat/Use Sonar 3", // Prepare for lobsterfrogman backups
   "Palindome/Cold Snake",
-
-  // Open Hidden City with Sue buff
-  "Hidden City/Open Office",
-  "Hidden City/Open Hospital",
-  "Hidden City/Open Apartment",
 
   // Knock down -combats
   "Manor/Finish Floor2",
@@ -94,6 +92,9 @@ export const routing: string[] = [
   "Tower/Naughty Sorceress",
   "Absorb/All",
   "Reprocess/All", // Return to locations if reprocessing was missed
+
+  "Misc/Dog Chow", // Eat if there are no other options
+  "Misc/Cake-Shaped Arena", // Arena if there are no charged options
 ];
 
 export function prioritize(tasks: Task[]): Task[] {

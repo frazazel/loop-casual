@@ -14,9 +14,9 @@ import {
 import { OutfitSpec, Quest, step, Task } from "./structure";
 import { CombatStrategy } from "../combat";
 import { atLevel } from "../lib";
-import { absorptionTargets } from "./absorb";
 import { OverridePriority } from "../priority";
 import { councilSafe } from "./level12";
+import { GameState } from "../state";
 
 function tuneCape(): void {
   if (
@@ -45,9 +45,9 @@ const Alcove: Task[] = [
     name: "Alcove",
     after: ["Start"],
     prepare: tuneCape,
-    ready: () =>
+    ready: (state: GameState) =>
       // Reprocess the grave rober, then wait for the +init skill
-      (absorptionTargets.hasReprocessTargets($location`The Defiled Alcove`) ||
+      (state.absorb.hasReprocessTargets($location`The Defiled Alcove`) ||
         have($skill`Overclocking`) ||
         !!(get("twinPeakProgress") & 8)) &&
       myBasestat($stat`Muscle`) >= 62,
@@ -85,7 +85,7 @@ const Cranny: Task[] = [
     do: $location`The Defiled Cranny`,
     outfit: (): OutfitSpec => {
       return {
-        equip: tryCape($item`antique machete`, $item`gravy boat`),
+        equip: tryCape($item`antique machete`, $item`gravy boat`, $item`transparent pants`),
         modifier: "-combat, ML",
       };
     },
@@ -135,8 +135,17 @@ const Niche: Task[] = [
     combat: new CombatStrategy()
       .macro(slay_macro, $monster`dirty old lihc`)
       .macro(
+        // Don't use the fire extinguisher if we want to absorb the lihc
+        (state: GameState) =>
+          new Macro().externalIf(
+            !state.absorb.isTarget($monster`basic lihc`),
+            new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`)
+          ),
+        $monster`basic lihc`
+      )
+      .macro(
         new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`).step(slay_macro),
-        ...$monsters`basic lihc, senile lihc, slick lihc`
+        ...$monsters`senile lihc, slick lihc`
       )
       .banish(...$monsters`basic lihc, senile lihc, slick lihc`),
     orbtargets: () => [$monster`dirty old lihc`],

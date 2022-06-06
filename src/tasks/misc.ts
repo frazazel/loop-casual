@@ -49,6 +49,7 @@ import { Engine } from "../engine";
 import { Keys, keyStrategy } from "./keys";
 import { debug } from "../lib";
 import { args } from "../main";
+import { GameState } from "../state";
 
 export const MiscQuest: Quest = {
   name: "Misc",
@@ -109,6 +110,7 @@ export const MiscQuest: Quest = {
     {
       name: "Acquire Kgnee",
       after: [],
+      priority: () => OverridePriority.Free,
       ready: () =>
         have($familiar`Reagnimated Gnome`) &&
         !have($item`gnomish housemaid's kgnee`) &&
@@ -128,6 +130,7 @@ export const MiscQuest: Quest = {
     {
       name: "Voting",
       after: [],
+      priority: () => OverridePriority.Free,
       completed: () => have($item`"I Voted!" sticker`) || get("_voteToday") || !get("voteAlways"),
       do: (): void => {
         // Taken from garbo
@@ -333,9 +336,9 @@ export const MiscQuest: Quest = {
       name: "Acquire Firework Hat",
       after: [],
       priority: () => OverridePriority.Free,
-      completed: () => have($item`porkpie-mounted popper`),
+      completed: () => have($item`sombrero-mounted sparkler`),
       do: () => {
-        cliExecute("acquire porkpie-mounted popper");
+        cliExecute("acquire sombrero-mounted sparkler");
       },
       limit: { tries: 1 },
       freeaction: true,
@@ -441,6 +444,7 @@ export const MiscQuest: Quest = {
         hermit($item`11-leaf clover`, 3);
         set("_loop_gyou_clovers", "true");
       },
+      freeaction: true,
       limit: { tries: 1 },
     },
     {
@@ -451,6 +455,19 @@ export const MiscQuest: Quest = {
       do: () => {
         cliExecute("fortune buff susie");
       },
+      freeaction: true,
+      limit: { tries: 1 },
+    },
+    {
+      name: "Friar Buff",
+      after: ["Friar/Finish", "Macguffin/Desert"], // After the desert to avoid wasting it on the camel
+      completed: () => get("friarsBlessingReceived"),
+      ready: () => familiarWeight($familiar`Grey Goose`) < 6,
+      priority: () => OverridePriority.Free,
+      do: () => {
+        cliExecute("friars familiar");
+      },
+      freeaction: true,
       limit: { tries: 1 },
     },
     {
@@ -458,7 +475,6 @@ export const MiscQuest: Quest = {
       after: [],
       ready: () => have($item`Ghost Dog Chow`) && familiarWeight($familiar`Grey Goose`) < 6,
       completed: () => false,
-      priority: () => OverridePriority.BadGoose,
       do: () => {
         use($item`Ghost Dog Chow`);
         if (familiarWeight($familiar`Grey Goose`) < 6 && have($item`Ghost Dog Chow`))
@@ -473,7 +489,6 @@ export const MiscQuest: Quest = {
       after: [],
       ready: () => familiarWeight($familiar`Grey Goose`) < 6 && myMeat() >= 100,
       completed: () => false,
-      priority: () => OverridePriority.BadGoose,
       do: arenaFight,
       outfit: { familiar: $familiar`Grey Goose`, modifier: "50 familiar exp, familiar weight" },
       freeaction: true,
@@ -493,6 +508,7 @@ export const MiscQuest: Quest = {
         use($item`box of Familiar Jacks`);
       },
       outfit: { familiar: $familiar`Cornbeefadon` },
+      freeaction: true,
       limit: { tries: 1 },
     },
     {
@@ -502,6 +518,7 @@ export const MiscQuest: Quest = {
       completed: () =>
         !have($item`SongBoom™ BoomBox`) || get("boomBoxSong") === "Food Vibrations",
       do: () => cliExecute("boombox food"),
+      freeaction: true,
       limit: { tries: 1 },
     },
     {
@@ -569,6 +586,17 @@ export const MiscQuest: Quest = {
         !have($item`hewn moon-rune spoon`) || args.tune === undefined || get("moonTuned", false),
       do: () => false,
       limit: { tries: 1 },
+    },
+    {
+      name: "Summon Lion",
+      after: ["Hidden City/Bowling Skills"],
+      ready: () => have($item`white page`),
+      completed: () => have($skill`Piezoelectric Honk`),
+      do: () => use($item`white page`),
+      limit: { tries: 1 },
+      choices: { 940: 2 },
+      outfit: { modifier: "item" },
+      combat: new CombatStrategy().killItem($monster`white lion`),
     },
   ],
 };
@@ -648,7 +676,7 @@ export const WandQuest: Quest = {
   ],
 };
 
-export function teleportitisTask(engine: Engine, tasks: Task[]): Task {
+export function teleportitisTask(engine: Engine, tasks: Task[], state: GameState): Task {
   // Combine the choice selections from all tasks
   // Where multiple tasks make different choices at the same choice, prefer:
   //  * Earlier tasks to later tasks
@@ -660,8 +688,8 @@ export function teleportitisTask(engine: Engine, tasks: Task[]): Task {
   choices[785] = 6;
   choices[787] = 6;
 
-  const done_tasks = tasks.filter((task) => task.completed());
-  const left_tasks = tasks.filter((task) => !task.completed());
+  const done_tasks = tasks.filter((task) => task.completed(state));
+  const left_tasks = tasks.filter((task) => !task.completed(state));
   for (const task of [...left_tasks, ...done_tasks].reverse()) {
     for (const choice_id_str in task.choices) {
       const choice_id = parseInt(choice_id_str);

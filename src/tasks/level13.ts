@@ -30,13 +30,13 @@ import { CombatStrategy } from "../combat";
 import { atLevel } from "../lib";
 import { args } from "../main";
 import { OverridePriority } from "../priority";
-import { absorptionTargets } from "./absorb";
+import { GameState } from "../state";
 import { Quest, step, Task } from "./structure";
 
 const Challenges: Task[] = [
   {
     name: "Speed Challenge",
-    after: ["Start", "Absorb/Twin Peak"],
+    after: ["Start", "Absorb/Overclocking"],
     completed: () => get("nsContestants1") > -1,
     do: (): void => {
       visitUrl("place.php?whichplace=nstower&action=ns_01_contestbooth");
@@ -396,8 +396,23 @@ export const TowerQuest: Quest = {
     },
     ...Door,
     {
+      name: "Beehive",
+      after: ["Macguffin/Forest", "Reprocess/The Black Forest"],
+      completed: () =>
+        have($item`beehive`) || have($familiar`Shorter-Order Cook`) || step("questL13Final") > 6,
+      do: $location`The Black Forest`,
+      choices: {
+        923: 1,
+        924: 3,
+        1018: 1,
+        1019: 1,
+      },
+      outfit: { modifier: "-combat" },
+      limit: { soft: 5 },
+    },
+    {
       name: "Wall of Skin",
-      after: ["Door"],
+      after: ["Door", "Beehive"],
       prepare: () => {
         if (have($item`handful of hand chalk`)) ensureEffect($effect`Chalky Hand`);
         fillHp();
@@ -477,9 +492,6 @@ export const TowerQuest: Quest = {
       after: ["Shadow"],
       completed: () => step("questL13Final") > 11,
       do: $location`The Naughty Sorceress' Chamber`,
-      post: () => {
-        absorptionTargets.ignoreUselessAbsorbs(); // Ignore remaining skills
-      },
       outfit: { modifier: "muscle" },
       combat: new CombatStrategy(true).kill(),
       limit: { tries: 1 },
@@ -490,14 +502,13 @@ export const TowerQuest: Quest = {
       priority: () => OverridePriority.Last,
       completed: () => step("questL13Final") === 999 || args.class === 0 || myPath() !== "Grey You",
       do: () => {
+        const state = new GameState();
         print(
-          `   Monsters remaining: ${Array.from(absorptionTargets.remainingAbsorbs()).join(", ")}`,
+          `   Monsters remaining: ${Array.from(state.absorb.remainingAbsorbs()).join(", ")}`,
           "purple"
         );
         print(
-          `   Reprocess remaining: ${Array.from(absorptionTargets.remainingReprocess()).join(
-            ", "
-          )}`,
+          `   Reprocess remaining: ${Array.from(state.absorb.remainingReprocess()).join(", ")}`,
           "purple"
         );
         visitUrl("place.php?whichplace=nstower&action=ns_11_prism");
@@ -511,7 +522,7 @@ export const TowerQuest: Quest = {
   ],
 };
 
-function fillHp() {
+export function fillHp() {
   if (myHp() < myMaxhp()) {
     if (!restoreHp(myMaxhp())) {
       // Backup healing plan in a pinch
@@ -520,7 +531,9 @@ function fillHp() {
       } else if (get("_hotTubSoaks") < 5) {
         visitUrl("clan_viplounge.php?action=hottub");
       }
-      while (myHp() < myMaxhp() && myMeat() >= 1000) {
+      let tries = 0;
+      while (myHp() < myMaxhp() && myMeat() >= 1000 && tries < 20) {
+        tries++;
         retrieveItem($item`Doc Galaktik's Homeopathic Elixir`);
         use($item`Doc Galaktik's Homeopathic Elixir`);
       }

@@ -45,6 +45,7 @@ function buildIotmList(): Requirement[] {
     {
       thing: $familiar`Shorter-Order Cook`,
       why: "Kill the Wall of Skin, initial exp",
+      optional: true,
     },
     {
       thing: $item`Deck of Every Card`,
@@ -150,6 +151,11 @@ function buildIotmList(): Requirement[] {
     {
       thing: $item`hewn moon-rune spoon`,
       why: "Access to an extra monster absorb (see tune arg)",
+      optional: true,
+    },
+    {
+      thing: new Hardcoded(get("hasMaydayContract"), "MayDay™ contract"),
+      why: "+combat, early meat",
       optional: true,
     },
   ];

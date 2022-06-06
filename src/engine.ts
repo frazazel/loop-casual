@@ -4,12 +4,15 @@ import {
   drink,
   eat,
   equippedItem,
+  familiarWeight,
   getInventory,
   Item,
   Location,
+  Monster,
   myBasestat,
   myBuffedstat,
   myHp,
+  myLevel,
   myMaxhp,
   myMaxmp,
   myMeat,
@@ -63,42 +66,38 @@ import {
 } from "kolmafia";
 import { debug } from "./lib";
 import {
-  BanishState,
   canChargeVoid,
   freekillSources,
   runawaySources,
   WandererSource,
   wandererSources,
 } from "./resources";
-import { AbsorptionTargets } from "./tasks/absorb";
 import { OverridePriority, Prioritization } from "./priority";
 import { args } from "./main";
-import { ponderPrediction } from "./lib";
 import { flyersDone } from "./tasks/level12";
+import { GameState } from "./state";
 
 export class Engine {
   attempts: { [task_name: string]: number } = {};
   propertyManager = new PropertiesManager();
   tasks: Task[];
   tasks_by_name = new Map<string, Task>();
-  absorptionTargets: AbsorptionTargets;
 
-  constructor(tasks: Task[], absorptionTargets: AbsorptionTargets) {
+  constructor(tasks: Task[]) {
     this.tasks = tasks;
-    this.absorptionTargets = absorptionTargets;
     for (const task of tasks) {
       this.tasks_by_name.set(task.name, task);
     }
   }
 
-  public available(task: Task): boolean {
+  public available(task: Task, state: GameState): boolean {
     for (const after of task.after) {
       const after_task = this.tasks_by_name.get(after);
       if (after_task === undefined) throw `Unknown task dependency ${after} on ${task.name}`;
-      if (!after_task.completed()) return false;
+      if (!after_task.completed(state)) return false;
     }
-    if (task.ready && !task.ready()) return false;
-    if (task.completed()) return false;
+    if (task.ready && !task.ready(state)) return false;
+    if (task.completed(state)) return false;
 
     // Wait until we get Infinite Loop before doing most things
     if (task.do instanceof Location && !have($skill`Infinite Loop`)) return false;
@@ -115,9 +114,9 @@ export class Engine {
   public execute(
     task: Task,
     priority: Prioritization,
-    banishes: BanishState,
+    state: GameState,
     ...wanderers: WandererSource[]
-  ): void {
+  ): GameState {
     debug(``);
     const reason = priority.explain();
     const why = reason === "" ? "Route" : reason;
@@ -145,27 +144,8 @@ export class Engine {
       }
     }
 
-    // Prepare choice selections
-    const choices: { [choice: number]: number } = {};
-    for (const choice_id_str in task.choices) {
-      const choice_id = parseInt(choice_id_str);
-      const choice = task.choices[choice_id];
-      if (typeof choice === "number") choices[choice_id] = choice;
-      else choices[choice_id] = choice();
-    }
-    this.propertyManager.setChoices(choices);
-    const ignored_noncombats = [
-      "Wooof! Wooooooof!",
-      "Seeing-Eyes Dog",
-      "Playing Fetch",
-      "Lights Out in the",
-    ];
-    const ignored_noncombats_seen = ignored_noncombats.filter(
-      (name) => task.do instanceof Location && task.do.noncombatQueue.includes(name)
-    );
-
     // Prepare basic equipment
-    const outfit = Outfit.create(task);
+    const outfit = Outfit.create(task, state);
     for (const wanderer of wanderers) {
       if (!outfit.equip(wanderer?.equip))
         throw `Wanderer equipment ${wanderer.equip} conflicts with ${task.name}`;
@@ -180,13 +160,15 @@ export class Engine {
       // (if we have teleportitis, everything is a possible target)
       const absorb_targets =
         task.do instanceof Location
-          ? this.absorptionTargets.remainingReprocess(
-              have($effect`Teleportitis`) ? undefined : task.do
-            )
+          ? new Set<Monster>([
+              ...state.absorb.remainingAbsorbs(have($effect`Teleportitis`) ? undefined : task.do),
+              ...state.absorb.remainingReprocess(have($effect`Teleportitis`) ? undefined : task.do),
+            ])
           : [];
       for (const monster of absorb_targets) {
-        if (this.absorptionTargets.isReprocessTarget(monster)) {
+        if (state.absorb.isReprocessTarget(monster)) {
           outfit.equip($familiar`Grey Goose`);
+          task_combat.autoattack(new Macro().trySkill($skill`Re-Process Matter`), monster);
           task_combat.prependMacro(new Macro().trySkill($skill`Re-Process Matter`), monster);
           debug(`Target x2: ${monster.name}`, "purple");
         } else {
@@ -212,7 +194,11 @@ export class Engine {
         (!(task.do instanceof Location) || !blacklist.has(task.do))
       ) {
         task_combat.prependMacro(
-          new Macro().if_("!hpbelow 50", new Macro().tryItem($item`rock band flyers`))
+          new Macro().if_(
+            // Avoid sausage goblin (2104) and ninja snowman assassin (1185)
+            "!hpbelow 50 && !monsterid 2104 && !monsterid 1185",
+            new Macro().tryItem($item`rock band flyers`)
+          )
         );
       }
 
@@ -220,34 +206,48 @@ export class Engine {
       const combat_resources = new CombatResourceAllocation();
       if (wanderers.length === 0) {
         // Set up a banish if needed
-        const banishSources = banishes.unusedBanishes();
-        combat_resources.banishWith(outfit.equipFirst(banishSources));
-        if (task_combat.can(MonsterStrategy.Banish)) {
+
+        if (task_combat.can(MonsterStrategy.Banish) && !state.banishes.isFullyBanished(task)) {
+          const available_tasks = this.tasks.filter((task) => this.available(task, state));
+          const banishSources = state.banishes.unusedBanishes(available_tasks);
+          combat_resources.banishWith(outfit.equipFirst(banishSources));
           debug(
             `Banish targets: ${task_combat
               .where(MonsterStrategy.Banish)
-              .filter((monster) => !banishes.already_banished.has(monster))
+              .filter((monster) => !state.banishes.already_banished.has(monster))
               .join(", ")}`
           );
-          debug(`Banishes used: ${Array.from(banishes.used_banishes).join(", ")}`);
+          debug(
+            `Banishes available: ${Array.from(banishSources)
+              .map((b) => b.do)
+              .join(", ")}`
+          );
         }
 
         // Equip an orb if we have a good target.
         // (If we have banished all the bad targets, there is no need to force an orb)
         if (
           priority.has(OverridePriority.GoodOrb) &&
-          (!task_combat.can(MonsterStrategy.Banish) || !banishes.isFullyBanished(task))
+          (!task_combat.can(MonsterStrategy.Banish) || !state.banishes.isFullyBanished(task))
         ) {
           outfit.equip($item`miniature crystal ball`);
         }
 
         // Set up a runaway if there are combats we do not care about
         let runaway = undefined;
-        if (task_combat.can(MonsterStrategy.Ignore)) {
+        if (
+          task_combat.can(MonsterStrategy.Ignore) &&
+          familiarWeight($familiar`Grey Goose`) >= 6 &&
+          myLevel() >= 11
+        ) {
           runaway = outfit.equipFirst(runawaySources);
           combat_resources.runawayWith(runaway);
         }
-        if (task_combat.can(MonsterStrategy.IgnoreNoBanish)) {
+        if (
+          task_combat.can(MonsterStrategy.IgnoreNoBanish) &&
+          familiarWeight($familiar`Grey Goose`) >= 6 &&
+          myLevel() >= 11
+        ) {
           if (runaway !== undefined && !runaway.banishes)
             combat_resources.runawayNoBanishWith(runaway);
           else
@@ -261,7 +261,7 @@ export class Engine {
           task_combat.can(MonsterStrategy.KillFree) ||
           (task_combat.can(MonsterStrategy.Kill) &&
             !task_combat.boss &&
-            this.tasks.every((t) => t.completed() || !t.combat?.can(MonsterStrategy.KillFree)))
+            this.tasks.every((t) => t.completed(state) || !t.combat?.can(MonsterStrategy.KillFree)))
         ) {
           combat_resources.freekillWith(outfit.equipFirst(freekillSources));
         }
@@ -308,6 +308,7 @@ export class Engine {
         task_combat,
         combat_resources,
         wanderers,
+        state,
         task.do instanceof Location ? task.do : undefined
       );
 
@@ -326,8 +327,27 @@ export class Engine {
       outfit.dress();
     }
 
+    // Prepare choice selections
+    const choices: { [choice: number]: number } = {};
+    for (const choice_id_str in task.choices) {
+      const choice_id = parseInt(choice_id_str);
+      const choice = task.choices[choice_id];
+      if (typeof choice === "number") choices[choice_id] = choice;
+      else choices[choice_id] = choice();
+    }
+    this.propertyManager.setChoices(choices);
+    const ignored_noncombats = [
+      "Wooof! Wooooooof!",
+      "Seeing-Eyes Dog",
+      "Playing Fetch",
+      "Lights Out in the",
+    ];
+    const ignored_noncombats_seen = ignored_noncombats.filter(
+      (name) => task.do instanceof Location && task.do.noncombatQueue.includes(name)
+    );
+
     // Do any task-specific preparation
-    if (task.prepare) task.prepare();
+    if (task.prepare) task.prepare(state);
 
     if (args.verboseequip) {
       const equipped = [...new Set(Slot.all().map((slot) => equippedItem(slot)))];
@@ -339,13 +359,16 @@ export class Engine {
       task.do();
     } else {
       adv1(task.do, 0, "");
+      if (get("lastEncounter") === "Wooof! Wooooooof!") {
+        // Encounter halloween dog adventure; just retry
+        adv1(task.do, 0, "");
+      }
     }
     runCombat();
     while (inMultiFight()) runCombat();
     if (choiceFollowsFight()) runChoice(-1);
     if (task.post) task.post();
 
-    this.absorptionTargets.updateAbsorbed();
     absorbConsumables();
     autosellJunk();
     if (have($effect`Beaten Up`)) throw "Fight was lost; stop.";
@@ -363,17 +386,13 @@ export class Engine {
       this.attempts[task.name]++;
     }
 
-    if (task.completed()) {
+    const new_state = new GameState();
+    if (task.completed(new_state)) {
       debug(`${task.name} completed!`, "blue");
-    } else if (!(task.ready?.() ?? true)) {
+    } else if (!(task.ready?.(state) ?? true)) {
       debug(`${task.name} not completed! [Again? Not ready]`, "blue");
     } else {
-      const priority_explain = Prioritization.from(
-        task,
-        ponderPrediction(),
-        this.absorptionTargets,
-        new BanishState(this.tasks.filter((task) => this.available(task)))
-      ).explain();
+      const priority_explain = Prioritization.from(task, new_state).explain();
       if (priority_explain !== "") {
         debug(`${task.name} not completed! [Again? ${priority_explain}]`, "blue");
       } else {
@@ -381,6 +400,7 @@ export class Engine {
       }
       this.check_limits(task); // Error if too many tries occur
     }
+    return new_state;
   }
 
   public check_limits(task: Task): void {
