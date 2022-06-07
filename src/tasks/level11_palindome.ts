@@ -24,7 +24,6 @@ import {
   get,
   have,
   Macro,
-  uneffect,
 } from "libram";
 import { Quest, step, Task } from "./structure";
 import { CombatStrategy } from "../combat";
@@ -192,6 +191,7 @@ const Zepplin: Task[] = [
         return {
           modifier: "sleaze dmg, sleaze spell dmg",
           equip: $items`transparent pants, deck of lewd playing cards`,
+          skipDefaults: true,
         };
       if (have($familiar`Melodramedary`) && get("camelSpit") >= 100)
         return {
@@ -325,12 +325,11 @@ const Dome: Task[] = [
       );
       use(1, Item.get(7270));
       visitUrl("place.php?whichplace=palindome&action=pal_mroffice");
-      visitUrl("clan_viplounge.php?action=hottub");
-      uneffect($effect`Beaten Up`);
     },
     outfit: { equip: $items`Talisman o' Namsilat` },
     limit: { tries: 1 },
     freeaction: true,
+    expectbeatenup: true,
   },
   {
     name: "Grove",

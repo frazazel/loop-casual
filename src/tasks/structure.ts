@@ -30,6 +30,7 @@ export interface OutfitSpec {
   modifier?: string; // Modifier to maximize
   familiar?: Familiar; // Familiar to use
   avoid?: Item[]; // Items that cause issues and so should not be equipped
+  skipDefaults?: boolean; // Do not equip default equipment; fully maximize
 }
 
 export type Task = {
@@ -50,6 +51,7 @@ export type Task = {
   freeaction?: boolean | (() => boolean);
   freecombat?: boolean;
   limit: Limit;
+  expectbeatenup?: boolean;
 
   // The monsters to search for with orb.
   // In addition, absorb targets are always searched with the orb.

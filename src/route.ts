@@ -36,6 +36,7 @@ export const routing: string[] = [
 
   // Aim for remaining pygmies
   "Hidden City/Bowling Skills",
+  "Manor/Kitchen", // finish kitchen early for +meat
   "Giant/Airship YR Healer",
   "Misc/Retune Moon",
   "War/Flyers Start", // Start the war and get flyers
@@ -90,6 +91,7 @@ export const routing: string[] = [
   // Finish up with last delay
   "Bat/Finish",
   "Tower/Naughty Sorceress",
+  "Absorb/South of the Border", // If we are doing this, do it early to give room for orb
   "Absorb/All",
   "Reprocess/All", // Return to locations if reprocessing was missed
 

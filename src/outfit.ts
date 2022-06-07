@@ -1,4 +1,5 @@
 import {
+  canEquip,
   cliExecute,
   equip,
   equippedAmount,
@@ -22,6 +23,7 @@ import { GameState } from "./state";
 export class Outfit {
   equips: Map<Slot, Item> = new Map<Slot, Item>();
   accesories: Item[] = [];
+  skipDefaults = false;
   familiar?: Familiar;
   modifier?: string;
   avoid?: Item[];
@@ -30,6 +32,7 @@ export class Outfit {
     if (item === undefined) return true;
     if (Array.isArray(item)) return item.every((val) => this.equip(val));
     if (!have(item)) return false;
+    if (item instanceof Item && !canEquip(item)) return false;
 
     if (item instanceof Item) {
       const slot = toSlot(item);
@@ -108,6 +111,7 @@ export class Outfit {
     if (item === undefined) return true;
     if (Array.isArray(item)) return item.every((val) => this.canEquip(val)); // TODO: smarter
     if (!have(item)) return false;
+    if (item instanceof Item && !canEquip(item)) return false;
 
     if (item instanceof Item) {
       const slot = toSlot(item);
@@ -267,9 +271,11 @@ export class Outfit {
         outfit.equip($familiar`Hobo Monkey`);
         outfit.equip($familiar`Leprechaun`); // backup
       }
-      if (spec.modifier.includes("+combat")) outfit.equip($item`thermal blanket`);
+      if (spec.modifier.includes("+combat") && !spec.modifier.includes("res"))
+        outfit.equip($item`thermal blanket`);
       outfit.modifier = spec.modifier;
     }
+    outfit.skipDefaults = spec?.skipDefaults ?? false;
 
     return outfit;
   }

@@ -30,6 +30,7 @@ import {
   $skills,
   $slot,
   get,
+  getBanishedMonsters,
   have,
   Macro,
 } from "libram";
@@ -199,7 +200,7 @@ const absorbTasks: AbsorbTask[] = [
   {
     do: $location`The Icy Peak`,
     after: ["McLargeHuge/Peak"],
-    outfit: { modifier: "cold res 5min, +combat", equip: $items`miniature crystal ball` },
+    outfit: { modifier: "10 cold res 5min, +combat", equip: $items`miniature crystal ball` },
     combat: new CombatStrategy().macro(new Macro().attack().repeat(), $monster`Snow Queen`),
   },
   // Level 9
@@ -210,7 +211,7 @@ const absorbTasks: AbsorbTask[] = [
   },
   {
     do: $location`A-Boo Peak`,
-    after: ["Orc Chasm/ABoo Peak"],
+    after: ["Orc Chasm/ABoo Clues"],
     combat: new CombatStrategy().macro(new Macro().attack().repeat()),
   },
   {
@@ -237,6 +238,7 @@ const absorbTasks: AbsorbTask[] = [
         if (numericModifier("Monster Level") < 100) break;
 
         const item = equippedItem(slot);
+        if (item === $item`none`) continue;
         if (numericModifier(item, "Monster Level") === 0) continue;
         if (item === $item`backup camera`) continue; // Always keep equipped to ensure we can get to 50
         equip(slot, $item`none`);
@@ -305,6 +307,7 @@ const absorbTasks: AbsorbTask[] = [
   {
     do: $location`The Hidden Park`,
     after: ["Hidden City/Open City", "Hidden City/Banish Janitors"],
+    outfit: { modifier: "+combat", equip: $items`miniature crystal ball` },
     choices: {
       789: () => {
         return get("relocatePygmyJanitor") === myAscensions() ? 2 : 3;
@@ -350,13 +353,14 @@ const absorbTasks: AbsorbTask[] = [
   {
     do: $location`The Haunted Billiards Room`,
     after: ["Manor/Billiards"],
+    outfit: { modifier: "+combat", equip: $items`miniature crystal ball` },
+    combat: new CombatStrategy().macro(new Macro().attack().repeat(), $monster`chalkdust wraith`),
     choices: { 900: 2 },
   },
   {
     do: $location`The Haunted Library`,
     after: ["Manor/Library"],
     choices: { 163: 4, 888: 4, 889: 5, 894: 1 },
-    combat: new CombatStrategy().macro(new Macro().attack().repeat(), $monster`chalkdust wraith`),
   },
   {
     do: $location`The Haunted Gallery`,
@@ -472,12 +476,13 @@ const absorbTasks: AbsorbTask[] = [
   },
   // Misc areas
   // These are probably only worthwhile with orb
-  // {
-  //   do: $location`South of the Border`,
-  //   after: ["Misc/Unlock Beach", "Absorb/Whitey's Grove"],
-  //   choices: { 4: 3 },
-  //   outfit: { modifier: "+combat", equip: $items`miniature crystal ball` },
-  // },
+  {
+    do: $location`South of the Border`,
+    ready: () => have($item`miniature crystal ball`),
+    after: ["Misc/Unlock Beach", "Absorb/Whitey's Grove"],
+    choices: { 4: 3 },
+    outfit: { modifier: "+combat", equip: $items`miniature crystal ball` },
+  },
   {
     do: $location`The Unquiet Garves`,
     after: ["Crypt/Start"],
@@ -694,24 +699,8 @@ const usefulMonsters = new Set<Monster>([...reprocessTargets, ...usefulSkills.va
 
 function monstersAt(location: Location): Monster[] {
   const result = Object.entries(appearanceRates(location))
-    .filter((i) => i[1] > 0)
+    .filter((i) => i[1] !== -2) // Avoid impossible monsters
     .map((i) => Monster.get<Monster>(i[0]));
-
-  // Workaround for some peculiar monsters
-  switch (location) {
-    case $location`The Hidden Apartment Building`:
-    case $location`The Hidden Bowling Alley`:
-    case $location`The Hidden Hospital`:
-    case $location`The Hidden Office Building`:
-    case $location`The Hidden Park`:
-      // Pygmy janitor can appear all over the hidden city
-      result.push($monster`pygmy janitor`);
-      break;
-    case $location`Oil Peak`:
-      // Oil baron appearance depends on ML
-      result.push($monster`oil baron`);
-      break;
-  }
   return result;
 }
 
@@ -806,6 +795,10 @@ export class AbsorbState {
         this.ignored.add(monster);
       }
     }
+
+    // Don't bother to chase the ice house banished monster
+    const icehouse = getBanishedMonsters().get($item`ice house`);
+    if (icehouse !== undefined) this.ignored.add(icehouse);
   }
 
   public remainingReprocess(location?: Location): Monster[] {

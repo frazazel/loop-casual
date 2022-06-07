@@ -23,7 +23,6 @@ import {
   get,
   have,
   Macro,
-  set,
 } from "libram";
 import { Quest, step, Task } from "./structure";
 import { CombatStrategy } from "../combat";
@@ -46,7 +45,6 @@ const ABoo: Task[] = [
     name: "ABoo Clues",
     after: ["ABoo Start"],
     completed: () => itemAmount($item`A-Boo clue`) * 30 >= get("booPeakProgress"),
-    ready: () => !get("_loopgyou_clue_used", false),
     do: $location`A-Boo Peak`,
     outfit: { modifier: "item", equip: $items`Space Trip safety headphones, HOA regulation book` },
     combat: new CombatStrategy()
@@ -59,27 +57,31 @@ const ABoo: Task[] = [
   },
   {
     name: "ABoo Horror",
-    after: ["ABoo Start"],
-    ready: () => have($item`A-Boo clue`) || get("_loopgyou_clue_used", false),
+    after: [
+      "ABoo Start",
+      "Absorb/The Batrat and Ratbat Burrow",
+      "Absorb/The Spooky Forest",
+      "Absorb/The eXtreme Slope",
+      "Absorb/A-Boo Peak",
+    ],
+    ready: () => have($item`A-Boo clue`),
     completed: () => get("booPeakProgress") === 0,
-    priority: () =>
-      get("_loopgyou_clue_used", false) ? OverridePriority.Always : OverridePriority.None,
     prepare: () => {
-      if (!get("_loopgyou_clue_used", false)) use($item`A-Boo clue`);
+      if (have($item`pec oil`)) ensureEffect($effect`Oiled-Up`);
+      use($item`A-Boo clue`);
       fillHp();
-      set("_loopgyou_clue_used", false);
     },
     do: $location`A-Boo Peak`,
-    post: () => {
-      if (get("lastEncounter") === "Wooof! Wooooooof!") {
-        set("_loopgyou_clue_used", true); // A ghost-dog adventure ate the ABoo Horror; we can just try again
-      }
-    },
     effects: $effects`Red Door Syndrome`,
-    outfit: { modifier: "100 spooky res, 100 cold res, HP", familiar: $familiar`Exotic Parrot` },
+    outfit: {
+      modifier: "20 spooky res, 20 cold res, HP",
+      familiar: $familiar`Exotic Parrot`,
+      skipDefaults: true,
+    },
     choices: { 611: 1 },
-    limit: { tries: 4 },
+    limit: { tries: 5 },
     freeaction: true,
+    expectbeatenup: true,
   },
   {
     name: "ABoo Peak",
@@ -142,7 +144,7 @@ const Twin: Task[] = [
     do: $location`Twin Peak`,
     choices: { 606: 1, 607: 1 },
     effects: $effects`Red Door Syndrome`,
-    outfit: { modifier: "stench res 4min, -combat, item" },
+    outfit: { modifier: "100 stench res 4min, -combat, item" },
     combat: new CombatStrategy().killItem(
       ...$monsters`bearpig topiary animal, elephant (meatcar?) topiary animal, spider (duck?) topiary animal`
     ),
