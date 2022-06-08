@@ -21,6 +21,7 @@ import {
   myMeat,
   myPrimestat,
   mySign,
+  myTurncount,
   numericModifier,
   retrieveItem,
   runChoice,
@@ -50,7 +51,7 @@ import { OutfitSpec, Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 import { Engine } from "../engine";
 import { Keys, keyStrategy } from "./keys";
-import { debug } from "../lib";
+import { atLevel, debug } from "../lib";
 import { args } from "../main";
 import { GameState } from "../state";
 
@@ -440,7 +441,7 @@ export const MiscQuest: Quest = {
     },
     {
       name: "Hermit Clover",
-      after: [],
+      after: ["Palindome/Protesters Start"],
       ready: () => myMeat() >= 1000,
       completed: () => get("_loop_gyou_clovers") === "true",
       do: () => {
@@ -553,7 +554,10 @@ export const MiscQuest: Quest = {
       after: ["Unlock Beach", "Reprocess/The Bugbear Pen"],
       ready: () =>
         knollAvailable() &&
-        (mySign() !== "Vole" || myMaxmp() - numericModifier("Maximum MP") >= 50),
+        (mySign() !== "Vole" ||
+          (myMaxmp() - numericModifier("Maximum MP") >= 50 &&
+            myMaxhp() - numericModifier("Maximum HP") >= 60 &&
+            myMeat() >= 11000)),
       completed: () =>
         !have($item`hewn moon-rune spoon`) || args.tune === undefined || get("moonTuned", false),
       priority: () => OverridePriority.Free,
@@ -602,6 +606,17 @@ export const MiscQuest: Quest = {
       choices: { 940: 2 },
       outfit: { modifier: "item" },
       combat: new CombatStrategy().killItem($monster`white lion`),
+    },
+    {
+      name: "Mayday",
+      after: ["Macguffin/Start"],
+      priority: () => OverridePriority.Free,
+      completed: () =>
+        !get("hasMaydayContract") || (!have($item`MayDay™ supply package`) && atLevel(11)),
+      ready: () => have($item`MayDay™ supply package`) && myTurncount() < 1000,
+      do: () => use($item`MayDay™ supply package`),
+      limit: { tries: 1 },
+      freeaction: true,
     },
   ],
 };
