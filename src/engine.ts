@@ -10,6 +10,7 @@ import {
   Item,
   Location,
   Monster,
+  myAdventures,
   myBasestat,
   myBuffedstat,
   myHp,
@@ -196,8 +197,8 @@ export class Engine {
       ) {
         task_combat.prependMacro(
           new Macro().if_(
-            // Avoid sausage goblin (2104) and ninja snowman assassin (1185)
-            "!hpbelow 50 && !monsterid 2104 && !monsterid 1185",
+            // Avoid sausage goblin (2104), ninja snowman assassin (1185), protagonist (160), quantum mechanic (223)
+            "!hpbelow 50 && !monsterid 2104 && !monsterid 1185 &&!monsterid 160 && !monsterid 223",
             new Macro().tryItem($item`rock band flyers`)
           )
         );
@@ -273,15 +274,15 @@ export class Engine {
         outfit.equipCharging();
       }
 
-      // Set up more wanderers if delay is needed
-      if (wanderers.length === 0 && this.hasDelay(task))
-        wanderers = outfit.equipUntilCapped(wandererSources);
+      if (wanderers.length === 0) {
+        // Set up more wanderers if delay is needed
+        if (this.hasDelay(task)) wanderers = outfit.equipUntilCapped(wandererSources);
 
-      // Prepare mood
-      applyEffects(outfit.modifier ?? "", task.effects || []);
+        // Prepare mood (no need if there is a forced wanderer)
+        applyEffects(outfit.modifier ?? "", task.effects || []);
+      }
 
       // Prepare full outfit
-
       if (!outfit.skipDefaults) {
         if (task_combat.boss) outfit.equip($familiar`Machine Elf`);
         const freecombat = task.freecombat || wanderers.find((wanderer) => wanderer.chance() === 1);
@@ -362,6 +363,8 @@ export class Engine {
 
     // Do the task
     const beaten_turns = haveEffect($effect`Beaten Up`);
+    const start_advs = myAdventures();
+    const goose_weight = familiarWeight($familiar`Grey Goose`);
     if (typeof task.do === "function") {
       task.do();
     } else {
@@ -381,8 +384,21 @@ export class Engine {
 
     absorbConsumables();
     autosellJunk();
-    if (haveEffect($effect`Beaten Up`) > beaten_turns && !task.expectbeatenup)
-      throw "Fight was lost; stop.";
+    // Crash if we unexpectedly lost the fight
+    if (!task.expectbeatenup && have($effect`Beaten Up`)) {
+      if (
+        haveEffect($effect`Beaten Up`) > beaten_turns || // Turns of beaten-up increased, so we lost
+        (haveEffect($effect`Beaten Up`) === beaten_turns &&
+          // Turns of beaten-up was constant but adventures went down, so we lost fight while already beaten up
+          (myAdventures() < start_advs ||
+            // Check if adventures went down but also we reprocessed a monster
+            (familiarWeight($familiar`Grey Goose`) < goose_weight &&
+              (myAdventures() === start_advs + 4 ||
+                myAdventures() === start_advs + 6 ||
+                myAdventures() === start_advs + 9))))
+      )
+        throw "Fight was lost; stop.";
+    }
     for (const poisoned of $effects`Hardly Poisoned at All, A Little Bit Poisoned, Somewhat Poisoned, Really Quite Poisoned, Majorly Poisoned, Toad In The Hole`) {
       if (have(poisoned)) uneffect(poisoned);
     }
@@ -435,7 +451,7 @@ function autosellJunk(): void {
   if (have($item`pork elf goodies sack`)) use($item`pork elf goodies sack`);
 
   // Sell junk items
-  const junk = $items`hamethyst, baconstone, meat stack, dense meat stack, facsimile dictionary, space blanket, black snake skin, demon skin, hellion cube, adder bladder, weremoose spit, Knob Goblin firecracker, wussiness potion, diamond-studded cane, Knob Goblin tongs, Knob Goblin scimitar, eggbeater, red-hot sausage fork, Knob Goblin pants, awful poetry journal, black pixel, pile of dusty animal bones`;
+  const junk = $items`hamethyst, baconstone, meat stack, dense meat stack, facsimile dictionary, space blanket, 1\,970 carat gold, black snake skin, demon skin, hellion cube, adder bladder, weremoose spit, Knob Goblin firecracker, wussiness potion, diamond-studded cane, Knob Goblin tongs, Knob Goblin scimitar, eggbeater, red-hot sausage fork, Knob Goblin pants, awful poetry journal, black pixel, pile of dusty animal bones`;
   for (const item of junk) {
     if (have(item)) autosell(item, itemAmount(item));
   }

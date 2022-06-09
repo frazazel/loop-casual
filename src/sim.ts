@@ -36,11 +36,16 @@ function buildIotmList(): Requirement[] {
   const requirements: Requirement[] = [
     { thing: $familiar`Grey Goose`, why: "Adventures" },
     { thing: $item`Clan VIP Lounge key`, why: "YRs, -combat" },
-    { thing: $item`industrial fire extinguisher`, why: "Ultrahydrated" },
+    {
+      thing: $item`industrial fire extinguisher`,
+      why: "Harem outfit, Bat hole, stone wool, Crypt, Ultrahydrated",
+      optional: true,
+    },
     { thing: $familiar`Melodramedary`, why: "Desert progress", optional: true },
     {
       thing: $item`unwrapped knock-off retro superhero cape`,
       why: "Slay the dead in crypt, pygmy killing",
+      optional: true,
     },
     {
       thing: $familiar`Shorter-Order Cook`,
@@ -92,6 +97,7 @@ function buildIotmList(): Requirement[] {
     {
       thing: $item`backup camera`,
       why: "Lobsterfrogmen, ML, init",
+      optional: true,
     },
     {
       thing: $item`combat lover's locket`,
@@ -119,6 +125,7 @@ function buildIotmList(): Requirement[] {
     {
       thing: $item`unbreakable umbrella`,
       why: "-combat modifier, ML",
+      optional: true,
     },
     {
       thing: new Hardcoded(

@@ -28,19 +28,16 @@ Run `loopgyou sim` to see "Is the script intended to work unmodified on my chara
 > loopgyou sim
 Checking your character... Legend: ✓ Have / X Missing & Required / X Missing & Optional
 IoTMs
-✓ backup camera - Lobsterfrogmen, ML, init
 ✓ Clan VIP Lounge key - YRs, -combat
 ✓ Cold medicine cabinet - QoL Equipment
 ✓ combat lover's locket - Reminiscing
 ✓ combat lover's locket (Mountain man) - Reminiscing for Ore
 ✓ combat lover's locket (Pygmy witch lawyer locketed) - Reminiscing for Infinite Loop
 ✓ grey gosling - Adventures
-✓ industrial fire extinguisher - Ultrahydrated
-✓ unbreakable umbrella - -combat modifier, ML
-✓ unwrapped knock-off retro superhero cape - Slay the dead in crypt, pygmy killing
 
 IoTMs (Optional)
 ✓ baby camelCalf - Desert progress
+✓ backup camera - Lobsterfrogmen, ML, init
 ✓ bottled Vampire Vintner - Pygmy killing
 ✓ Cargo Cultist Shorts - War outfit
 ✓ Cosmic bowling ball - Banishes, Pygmy killing
@@ -49,6 +46,7 @@ IoTMs (Optional)
 ✓ fresh coat of paint - Minor boosts in moxie sign
 ✓ haunted doghouse - Ghost dog chow
 ✓ hewn moon-rune spoon - Access to an extra monster absorb (see tune arg)
+✓ industrial fire extinguisher - Harem outfit, Bat hole, stone wool, Crypt, Ultrahydrated
 ✓ MayDay™ contract - +combat, early meat
 ✓ miniature crystal ball - Monster prediction
 ✓ Powerful Glove - Pixels and lobsterfrogmen
@@ -57,6 +55,8 @@ IoTMs (Optional)
 ✓ SongBoom™ BoomBox - In-run meat source
 ✓ SpinMaster™ lathe - Equipment
 ✓ Summon Clip Art - Amulet coin (via familiar jacks)
+✓ unbreakable umbrella - -combat modifier, ML
+✓ unwrapped knock-off retro superhero cape - Slay the dead in crypt, pygmy killing
 
 Miscellany (Optional)
 ✓ Cornbeefadon - Amulet coin, with clip art
