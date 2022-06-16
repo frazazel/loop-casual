@@ -53,7 +53,6 @@ export const pulls: PullSpec[] = [
   },
   { pull: $item`white page` },
   { pull: $item`portable cassette player` },
-  { pull: $item`blackberry galoshes` },
   { pull: $item`antique machete` },
   { pull: $item`book of matches` },
   { pull: $items`Space Trip safety headphones, HOA regulation book`, name: "-ML", optional: true },
@@ -68,6 +67,7 @@ export const pulls: PullSpec[] = [
   { pull: $item`giant yellow hat` },
   { pull: $item`gravy boat` },
   { pull: $item`11-leaf clover` },
+  { pull: $item`blackberry galoshes` },
   {
     pull: $item`wet stew`,
     useful: () =>
