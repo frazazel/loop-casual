@@ -174,7 +174,7 @@ const absorbTasks: AbsorbTask[] = [
   // Level 7
   {
     do: $location`The VERY Unquiet Garves`,
-    after: ["Crypt/Finish"],
+    after: ["Crypt/Start", "Crypt/Finish"],
   },
   // Level 8
   {
@@ -301,6 +301,7 @@ const absorbTasks: AbsorbTask[] = [
       579: () => {
         return get("lastTempleAdventures") === myAscensions() ? 2 : 1;
       },
+      580: 3,
       581: 3,
     },
   },
