@@ -345,7 +345,8 @@ export const MiscQuest: Quest = {
       name: "Acquire Firework Hat",
       after: [],
       priority: () => OverridePriority.Free,
-      completed: () => get("_fireworksShopHatBought"),
+      ready: () => !get("_fireworksShopHatBought"),
+      completed: () => have($item`sombrero-mounted sparkler`),
       do: () => {
         cliExecute("acquire sombrero-mounted sparkler");
       },
@@ -532,6 +533,21 @@ export const MiscQuest: Quest = {
       do: () => cliExecute("boombox food"),
       freeaction: true,
       limit: { tries: 1 },
+    },
+    {
+      name: "Boombox Seasoning",
+      after: [],
+      priority: () => OverridePriority.Free,
+      ready: () => have($skill`System Sweep`)
+        && have($skill`Double Nanovision`)
+        && (get("currentNunneryMeat") === 0 || get("currentNunneryMeat") === 100000),
+      completed: () =>
+        !have($item`SongBoom™ BoomBox`)
+        || get("boomBoxSong") === "Food Vibrations"
+        || get("_boomBoxSongsLeft") === 0,
+      do: () => cliExecute("boombox food"),
+      freeaction: true,
+      limit: { tries: 2 },
     },
     {
       name: "Gnome Shirt",
