@@ -529,8 +529,8 @@ export const MiscQuest: Quest = {
       after: [],
       priority: () => OverridePriority.Free,
       completed: () =>
-        !have($item`SongBoom™ BoomBox`) || get("boomBoxSong") === "Food Vibrations",
-      do: () => cliExecute("boombox food"),
+      	true,
+      do: () => cliExecute("boombox meat"),
       freeaction: true,
       limit: { tries: 1 },
     },
@@ -538,9 +538,7 @@ export const MiscQuest: Quest = {
       name: "Boombox Seasoning",
       after: [],
       priority: () => OverridePriority.Free,
-      ready: () => have($skill`System Sweep`)
-        && have($skill`Double Nanovision`)
-        && (get("currentNunneryMeat") === 0 || get("currentNunneryMeat") === 100000),
+      ready: () => (get("currentNunneryMeat") === 0 || get("currentNunneryMeat") === 100000),
       completed: () =>
         !have($item`SongBoom™ BoomBox`)
         || get("boomBoxSong") === "Food Vibrations"
