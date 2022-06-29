@@ -1,4 +1,5 @@
 import {
+  cliExecute,
   equip,
   equippedAmount,
   equippedItem,
@@ -22,11 +23,13 @@ export class Outfit {
   skipDefaults = false;
   familiar?: Familiar;
   modifier?: string;
+  avoid?: Item[];
 
   equip(item?: Item | Familiar | (Item | Familiar)[]): boolean {
     if (item === undefined) return true;
     if (Array.isArray(item)) return item.every((val) => this.equip(val));
     if (!have(item)) return false;
+    if (this.avoid && this.avoid.find((i) => i === item) !== undefined) return false;
 
     if (item instanceof Item) {
       const slot = toSlot(item);
@@ -101,6 +104,7 @@ export class Outfit {
     if (item === undefined) return true;
     if (Array.isArray(item)) return item.every((val) => this.canEquip(val)); // TODO: smarter
     if (!have(item)) return false;
+    if (this.avoid && this.avoid.find((i) => i === item) !== undefined) return false;
 
     if (item instanceof Item) {
       const slot = toSlot(item);
@@ -172,6 +176,14 @@ export class Outfit {
       }
     }
 
+    for (const item of this.avoid ?? []) {
+      if (equippedAmount(item) > 0) cliExecute(`unequip ${item.name}`);
+    }
+
+    for (const item of this.avoid ?? []) {
+      if (equippedAmount(item) > 0) cliExecute(`unequip ${item.name}`);
+    }
+
     if (this.modifier) {
       // Handle familiar equipment manually to avoid weird Left-Hand Man behavior
       const fam_equip = this.equips.get($slot`familiar`);
@@ -193,6 +205,13 @@ export class Outfit {
         ]);
       }
 
+      if (this.avoid !== undefined) {
+        requirements = Requirement.merge([
+          requirements,
+          new Requirement([], { preventEquip: this.avoid }),
+        ]);
+      }
+
       if (!requirements.maximize()) {
         throw `Unable to maximize ${this.modifier}`;
       }
@@ -205,6 +224,7 @@ export class Outfit {
     const outfit = new Outfit();
     for (const item of spec?.equip ?? []) outfit.equip(item);
     if (spec?.familiar) outfit.equip(spec.familiar);
+    outfit.avoid = spec?.avoid;
 
     if (spec?.modifier) {
       // Run maximizer
@@ -219,7 +239,6 @@ export class Outfit {
           outfit.equip($familiar`Jumpsuited Hound Dog`);
         }
       }
-      if (spec.modifier.includes("+combat")) outfit.equip($familiar`Jumpsuited Hound Dog`);
       if (spec.modifier.includes("meat")) outfit.equip($familiar`Hobo Monkey`);
       if (spec.modifier.includes("init")) outfit.equip($familiar`Oily Woim`);
       outfit.modifier = spec.modifier;
@@ -233,7 +252,9 @@ export class Outfit {
     if (myBasestat($stat`muscle`) >= 40) this.equip($item`mafia thumb ring`);
     this.equip($item`lucky gold ring`);
 
-    if (this.modifier?.includes("-combat")) this.equip($familiar`Disgeist`); // low priority
+    // low priority familiars for combat frequency
+    if (this.modifier?.includes("-combat")) this.equip($familiar`Disgeist`);
+    if (this.modifier?.includes("+combat")) this.equip($familiar`Jumpsuited Hound Dog`);
 
     if (!this.modifier) {
       // Default outfit

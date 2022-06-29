@@ -2,6 +2,7 @@ import {
   adv1,
   cliExecute,
   familiarEquippedEquipment,
+  familiarWeight,
   itemAmount,
   myBasestat,
   myPrimestat,
@@ -55,6 +56,15 @@ export const MiscQuest: Quest = {
       do: () => {
         const options = $items`skeletal skiff, yellow submarine`;
         const bestChoice = options.sort((a, b) => retrievePrice(a) - retrievePrice(b))[0];
+        if (bestChoice === $item`yellow submarine`) {
+          // Open the mystic store if needed
+          if (!have($item`continuum transfunctioner`)) {
+            visitUrl("place.php?whichplace=forestvillage&action=fv_mystic");
+            runChoice(1);
+            runChoice(1);
+            runChoice(1);
+          }
+        }
         retrieveItem(bestChoice);
       },
       limit: { tries: 1 },
@@ -304,6 +314,22 @@ export const MiscQuest: Quest = {
       ),
       limit: { tries: 10 },
     },
+    {
+      name: "Goose Exp",
+      after: [],
+      priority: () => true,
+      completed: () =>
+        familiarWeight($familiar`Grey Goose`) >= 9 ||
+        get("_loop_casual_chef_goose") === "true" ||
+        !have($familiar`Grey Goose`) ||
+        !have($familiar`Shorter-Order Cook`),
+      do: () => {
+        set("_loop_casual_chef_goose", "true");
+      },
+      outfit: { familiar: $familiar`Grey Goose` },
+      limit: { tries: 1 },
+      freeaction: true,
+    },
   ],
 };
 
@@ -361,14 +387,23 @@ export const KeysQuest: Quest = {
           set("_dailyDungeonMalwareUsed", true);
         uneffect($effect`Apathy`);
       },
-      outfit: { equip: $items`ring of Detect Boring Doors` },
+      outfit: {
+        equip: $items`ring of Detect Boring Doors`,
+        avoid: $items`carnivorous potted plant`,
+      },
       combat: new CombatStrategy().macro(
         new Macro()
           .item($item`daily dungeon malware`)
           .attack()
           .repeat()
       ),
-      choices: { 689: 1, 690: 2, 691: 2, 692: 3, 693: 2 },
+      choices: {
+        689: 1,
+        690: 2,
+        691: 3, // Do not skip the second chest; there is a chance we skip all the monsters
+        692: 3,
+        693: 2,
+      },
       limit: { soft: 11 },
     },
     {
@@ -378,7 +413,9 @@ export const KeysQuest: Quest = {
       completed: () => get("dailyDungeonDone") || keyCount() >= 3,
       do: $location`The Daily Dungeon`,
       post: () => uneffect($effect`Apathy`),
-      outfit: { equip: $items`ring of Detect Boring Doors` },
+      outfit: {
+        equip: $items`ring of Detect Boring Doors`,
+      },
       combat: new CombatStrategy().kill(),
       choices: { 689: 1, 690: 2, 691: 2, 692: 3, 693: 2 },
       limit: { tries: 11 },
