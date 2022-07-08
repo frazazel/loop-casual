@@ -1,5 +1,4 @@
 import {
-  bjornifyFamiliar,
   buy,
   cliExecute,
   Familiar,
@@ -287,7 +286,7 @@ const familiarEquip = have($item`astral pet sweater`)
   ? $item`luck incense`
   : null;
 const familiarGear = [
-  ...$items`Daylight Shavings Helmet, Buddy Bjorn, Stephen's lab coat, hewn moon-rune spoon`,
+  ...$items`Daylight Shavings Helmet, Stephen's lab coat, hewn moon-rune spoon`,
   ...(familiarEquip ? [familiarEquip] : []),
   ...(familiarPants ? [familiarPants] : []),
 ];
@@ -349,7 +348,6 @@ export const runawaySources: RunawaySource[] = [
       have(runawayFamiliar) &&
       availableFamiliarRunaways(5) > get("_banderRunaways"), // 5 from iFlail
     prepare: (): void => {
-      bjornifyFamiliar($familiar`Gelatinous Cubeling`);
       if (
         floor((familiarWeight(runawayFamiliar) + weightAdjustment()) / 5) <= get("_banderRunaways")
       ) {
@@ -371,7 +369,6 @@ export const runawaySources: RunawaySource[] = [
       have(runawayFamiliar) &&
       availableFamiliarRunaways(10) > get("_banderRunaways"), // 10 from iFlails
     prepare: (): void => {
-      bjornifyFamiliar($familiar`Gelatinous Cubeling`);
       if (
         floor((familiarWeight(runawayFamiliar) + weightAdjustment()) / 5) <= get("_banderRunaways")
       ) {
