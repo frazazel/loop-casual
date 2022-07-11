@@ -5,17 +5,20 @@ import {
   haveEquipped,
   Item,
   itemAmount,
+  myBasestat,
   runChoice,
   visitUrl,
 } from "kolmafia";
 import {
   $effect,
+  $familiar,
   $item,
   $items,
   $location,
   $monster,
   $monsters,
   $slots,
+  $stat,
   get,
   have,
   Macro,
@@ -32,6 +35,7 @@ export enum Keys {
   Deck = "Deck",
   Malware = "Daily Dungeon Malware",
   Dungeon = "Daily Dungeon",
+  Fantasy = "Fantasy",
   ZapBoris = "Zap Boris",
   ZapSneaky = "Zap Sneaky",
   ZapJarlsberg = "Zap Jarlsberg",
@@ -139,8 +143,36 @@ const heroKeys: KeyTask[] = [
     limit: { tries: 15 },
   },
   {
+    which: Keys.Fantasy,
+    possible: () => get("frAlways") || get("_frToday"),
+    after: ["Misc/Open Fantasy"],
+    ready: () => myBasestat($stat`moxie`) >= 120,
+    completed: () => $location`The Bandit Crossroads`.turnsSpent >= 5,
+    do: $location`The Bandit Crossroads`,
+    outfit: {
+      familiar: $familiar`none`,
+      equip: $items`FantasyRealm G. E. M.`,
+      modifier: "moxie",
+    },
+    combat: new CombatStrategy().kill(),
+    limit: { tries: 5 },
+  },
+  {
+    which: Keys.ZapSneaky,
+    possible: () => get("lastZapperWandExplosionDay") <= 0 && !have($item`Boris's ring`) && !have($item`Jarlsberg's earring`),
+    after: ["Pull/Sneaky Pete's breath spray", "Wand/Wand"],
+    completed: () =>
+      get("lastZapperWandExplosionDay") >= 1 || !have($item`Sneaky Pete's breath spray`),
+    do: () => {
+      unequipAcc($item`Sneaky Pete's breath spray`);
+      cliExecute("zap Sneaky Pete's breath spray");
+    },
+    limit: { tries: 1 },
+    freeaction: true,
+  },
+  {
     which: Keys.ZapBoris,
-    possible: () => get("lastZapperWandExplosionDay") <= 0,
+    possible: () => get("lastZapperWandExplosionDay") <= 0 && !have($item`Jarlsberg's earring`) && !have($item`Sneaky Pete's breath spray`),
     after: ["Pull/Boris's ring", "Wand/Wand"],
     completed: () => get("lastZapperWandExplosionDay") >= 1 || !have($item`Boris's ring`),
     do: () => {
@@ -152,25 +184,12 @@ const heroKeys: KeyTask[] = [
   },
   {
     which: Keys.ZapJarlsberg,
-    possible: () => get("lastZapperWandExplosionDay") <= 0,
+    possible: () => get("lastZapperWandExplosionDay") <= 0 && !have($item`Boris's ring`) && !have($item`Sneaky Pete's breath spray`),
     after: ["Pull/Jarlsberg's earring", "Wand/Wand"],
     completed: () => get("lastZapperWandExplosionDay") >= 1 || !have($item`Jarlsberg's earring`),
     do: () => {
       unequipAcc($item`Jarlsberg's earring`);
       cliExecute("zap Jarlsberg's earring");
-    },
-    limit: { tries: 1 },
-    freeaction: true,
-  },
-  {
-    which: Keys.ZapSneaky,
-    possible: () => (get("_zapCount") < 2 ? undefined : get("lastZapperWandExplosionDay") <= 0), // Wand might explode
-    after: ["Pull/Sneaky Pete's breath spray", "Wand/Wand"],
-    completed: () =>
-      get("lastZapperWandExplosionDay") >= 1 || !have($item`Sneaky Pete's breath spray`),
-    do: () => {
-      unequipAcc($item`Sneaky Pete's breath spray`);
-      cliExecute("zap Sneaky Pete's breath spray");
     },
     limit: { tries: 1 },
     freeaction: true,
