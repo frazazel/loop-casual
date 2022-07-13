@@ -648,6 +648,7 @@ export const MiscQuest: Quest = {
       completed: () => have($item`FantasyRealm G. E. M.`),
       do: () => {
         visitUrl("place.php?whichplace=realm_fantasy&action=fr_initcenter");
+        runChoice(-1);
       },
       choices: { 1280: 1 },
       limit: { tries: 1 },
@@ -700,9 +701,7 @@ export const WandQuest: Quest = {
         have($item`hexagonal wand`) ||
         have($item`marble wand`) ||
         have($item`pine wand`) ||
-        (keyStrategy.useful(Keys.ZapBoris) === false &&
-          keyStrategy.useful(Keys.ZapJarlsberg) === false &&
-          keyStrategy.useful(Keys.ZapSneaky) === false),
+        keyStrategy.useful(Keys.Zap) === false,
       prepare: () => {
         if (have($item`plus sign`)) use($item`plus sign`);
       },
@@ -724,9 +723,7 @@ export const WandQuest: Quest = {
         have($item`hexagonal wand`) ||
         have($item`marble wand`) ||
         have($item`pine wand`) ||
-        (keyStrategy.useful(Keys.ZapBoris) === false &&
-          keyStrategy.useful(Keys.ZapJarlsberg) === false &&
-          keyStrategy.useful(Keys.ZapSneaky) === false),
+        keyStrategy.useful(Keys.Zap) === false,
       do: () => use($item`dead mimic`),
       freeaction: true,
       limit: { tries: 1 },
