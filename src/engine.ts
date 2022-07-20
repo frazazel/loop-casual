@@ -206,7 +206,7 @@ export class Engine {
       }
 
       // Use rock-band flyers if needed (300 extra as a buffer for mafia tracking)
-      const blacklist = new Set<Location>($locations`The Copperhead Club, The Black Forest`);
+      const blacklist = new Set<Location>($locations`The Copperhead Club, The Black Forest, Oil Peak`);
       if (
         myBasestat($stat`Moxie`) >= 200 &&
         myBuffedstat($stat`Moxie`) >= 200 &&
@@ -318,7 +318,15 @@ export class Engine {
           outfit.equip($item`cursed magnifying glass`);
         outfit.equipDefaults();
       }
-      outfit.dress();
+      try {
+        outfit.dress();
+      } catch {
+        // If we fail to dress, this is maybe just a mafia desync.
+        // So refresh our inventory and try again (once).
+        debug("Possible mafia desync detected; refreshing...");
+        cliExecute("refresh all");
+        outfit.dress();
+      }
 
       // Prepare resources if needed
       wanderers.map((source) => source.prepare && source.prepare());

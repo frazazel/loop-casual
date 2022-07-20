@@ -13,14 +13,15 @@ import {
   get,
   have,
   Macro,
+  set,
 } from "libram";
 import { Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 import { CombatStrategy } from "../combat";
-import { atLevel } from "../lib";
+import { atLevel, debug } from "../lib";
 
 export function flyersDone(): boolean {
-  return get("flyeredML") >= 10500;
+  return get("flyeredML") >= 10000;
 }
 
 const Flyers: Task[] = [
@@ -43,9 +44,17 @@ const Flyers: Task[] = [
     outfit: { equip: $items`beer helmet, distressed denim pants, bejeweled pledge pin` },
     do: (): void => {
       visitUrl("bigisland.php?place=concert&pwd");
+      cliExecute("refresh inv");
+      if (have($item`rock band flyers`)) {
+        debug("Mafia tracking was incorrect for rock band flyers; continuing to flyer...");
+        set("_loopgyou_flyeredML_buffer", get("_loopgyou_flyeredML_buffer", 0) + (get("flyeredML") - 9900));
+        set("flyeredML", 9900);
+      } else if (get("_loopgyou_flyeredML_buffer", 0) > 0) {
+        debug(`Mafia tracking was incorrect for rock band flyers; quest completed at ${get("flyeredML") + get("_loopgyou_flyeredML_buffer", 0)}`);
+      }
     },
     freeaction: true,
-    limit: { tries: 1 },
+    limit: { soft: 10, message: "See https://kolmafia.us/threads/flyeredml-tracking-wrong.27567/" },
   },
 ];
 
@@ -347,8 +356,7 @@ export const WarQuest: Quest = {
       name: "Outfit Hippy",
       after: ["Misc/Unlock Island"],
       completed: () =>
-        (have($item`filthy corduroys`) && have($item`filthy knitted dread sack`)) ||
-        have($item`Cargo Cultist Shorts`),
+        (have($item`filthy corduroys`) && have($item`filthy knitted dread sack`)),
       ready: () =>
         !have($effect`Everything Looks Yellow`) && (myMeat() >= 250 || have($item`yellow rocket`)),
       priority: () =>
@@ -363,10 +371,9 @@ export const WarQuest: Quest = {
       name: "Outfit Frat",
       after: ["Start", "Outfit Hippy"],
       completed: () =>
-        (have($item`beer helmet`) &&
-          have($item`distressed denim pants`) &&
-          have($item`bejeweled pledge pin`)) ||
-        have($item`Cargo Cultist Shorts`),
+      (have($item`beer helmet`) &&
+        have($item`distressed denim pants`) &&
+        have($item`bejeweled pledge pin`)),
       ready: () =>
         !have($effect`Everything Looks Yellow`) && (myMeat() >= 250 || have($item`yellow rocket`)),
       priority: () =>
@@ -379,27 +386,8 @@ export const WarQuest: Quest = {
       choices: { 142: 3, 143: 3, 144: 3, 145: 1, 146: 3, 1433: 3 },
     },
     {
-      name: "Outfit Frat Cargo",
-      after: [],
-      completed: () =>
-        (have($item`beer helmet`) &&
-          have($item`distressed denim pants`) &&
-          have($item`bejeweled pledge pin`)) ||
-        !have($item`Cargo Cultist Shorts`),
-      ready: () =>
-        !have($effect`Everything Looks Yellow`) && (myMeat() >= 250 || have($item`yellow rocket`)),
-      priority: () =>
-        have($effect`Everything Looks Yellow`) ? OverridePriority.None : OverridePriority.YR,
-      acquire: [{ item: $item`yellow rocket` }],
-      do: () => {
-        cliExecute(`cargo 568`);
-      },
-      limit: { tries: 1 },
-      combat: new CombatStrategy().macro(new Macro().item($item`yellow rocket`)),
-    },
-    {
       name: "Enrage",
-      after: ["Start", "Misc/Unlock Island", "Outfit Frat Cargo", "Outfit Frat"],
+      after: ["Start", "Misc/Unlock Island", "Outfit Frat"],
       completed: () => step("questL12War") >= 1,
       outfit: {
         equip: $items`beer helmet, distressed denim pants, bejeweled pledge pin`,

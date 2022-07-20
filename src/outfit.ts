@@ -14,7 +14,7 @@ import {
   useFamiliar,
   weaponHands,
 } from "kolmafia";
-import { $familiar, $item, $skill, $slot, $slots, $stat, get, have, Requirement } from "libram";
+import { $familiar, $item, $skill, $slot, $slots, $stat, get, getKramcoWandererChance, have, Requirement } from "libram";
 import { Task } from "./tasks/structure";
 import { canChargeVoid, Resource } from "./resources";
 import { Keys, keyStrategy } from "./tasks/keys";
@@ -166,7 +166,10 @@ export class Outfit {
     //Order is anchored here to prevent DFSS shenanigans
     for (const slot of $slots`weapon, off-hand, hat, back, shirt, pants, familiar, buddy-bjorn, crown-of-thrones`) {
       const equipment = this.equips.get(slot);
-      if (equipment) equip(slot, equipment);
+      if (equipment) {
+        equip(slot, equipment);
+        if (equippedItem(slot) !== equipment) throw `Failed to equip ${equipment}`;
+      }
     }
 
     //We don't care what order accessories are equipped in, just that they're equipped
@@ -185,6 +188,7 @@ export class Outfit {
         accessoryEquips.filter((accessory) => accessory === currentEquip).length
       ) {
         equip(slot, toEquip);
+        if (equippedItem(slot) !== toEquip) throw `Failed to equip ${toEquip}`;
       }
     }
 
@@ -287,7 +291,8 @@ export class Outfit {
       this.equip($item`unbreakable umbrella`);
     }
 
-    if (familiarWeight($familiar`Grey Goose`) < 6) {
+    if (familiarWeight($familiar`Grey Goose`) < 6 ||
+      (familiarWeight($familiar`Grey Goose`) >= 6 && [...this.equips.values()].includes($item`Kramco Sausage-o-Matic™`) && getKramcoWandererChance() === 1)) {
       if (this.equip($familiar`Grey Goose`)) {
         this.equip($item`yule hatchet`);
         this.equip($item`ghostly reins`);
