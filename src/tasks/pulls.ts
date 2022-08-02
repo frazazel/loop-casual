@@ -20,8 +20,8 @@ type PullSpec = {
 
 export const pulls: PullSpec[] = [
   // Always pull the key items first
-  { pull: $item`daily dungeon malware`, useful: () => keyStrategy.useful(Keys.Malware) },
-  { name: "Key Zappable", pull: () => keyStrategy.getZapChoice(), useful: () => keyStrategy.useful(Keys.Zap), duplicate: true },
+  { pull: $item`daily dungeon malware`, useful: () => keyStrategy.useful(Keys.Malware) && !args.delaytower },
+  { name: "Key Zappable", pull: () => keyStrategy.getZapChoice(), useful: () => keyStrategy.useful(Keys.Zap) && !args.delaytower, duplicate: true },
   {
     name: "Ore",
     pull: () => (get("trapperOre") === "" ? undefined : Item.get(get("trapperOre"))),
@@ -34,10 +34,6 @@ export const pulls: PullSpec[] = [
       return itemAmount(Item.get(get("trapperOre"))) < 3 && step("questL08Trapper") < 2;
     },
     duplicate: true,
-  },
-  {
-    pull: $item`Mohawk wig`,
-    useful: () => (have($item`S.O.C.K.`) ? !have($item`Mohawk wig`) : undefined), // if one didn't drop naturally
   },
   {
     pull: $item`1,970 carat gold`,
@@ -77,6 +73,10 @@ export const pulls: PullSpec[] = [
   { pull: $item`mafia thumb ring`, optional: true },
   { pull: $item`giant yellow hat` },
   { pull: $item`gravy boat` },
+  {
+    pull: $item`Mohawk wig`,
+    useful: () => (have($item`S.O.C.K.`) ? !have($item`Mohawk wig`) : undefined), // if one didn't drop naturally
+  },
   { pull: $item`11-leaf clover`, duplicate: true },
   {
     pull: $item`wet stew`,
