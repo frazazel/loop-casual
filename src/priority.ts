@@ -23,6 +23,7 @@ export enum OverridePriority {
   None = 0,
   BadOrb = -2,
   BadGoose = -16,
+  BadYR = -30,
   BadMood = -100,
   Last = -10000,
 }
@@ -118,6 +119,7 @@ export class Prioritization {
       [OverridePriority.YR, "Yellow ray"],
       [OverridePriority.GoodGoose, "Goose charged"],
       [OverridePriority.GoodBanish, "Banishes committed"],
+      [OverridePriority.BadYR, "Too early for yellow ray"],
       [OverridePriority.BadOrb, this.orb_monster ? `Avoid ${this.orb_monster}` : `Avoid ?`],
       [OverridePriority.BadGoose, "Goose not charged"],
       [OverridePriority.BadMood, "Wrong combat modifiers"],

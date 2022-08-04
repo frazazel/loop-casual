@@ -5,7 +5,6 @@ export const routing: string[] = [
   "Toot/Finish",
   // Get basic gear
   "Misc/Goose Exp",
-  "Misc/Acquire Cold Medicine Gear",
   "Misc/Acquire Firework Hat",
   "Misc/Acquire Birch Battery",
   "Keys/Deck",
@@ -72,6 +71,7 @@ export const routing: string[] = [
   "Macguffin/Oasis Drum", // Get drum as soon as pages are gathered
   "Macguffin/Desert", // charge camel for protestors
 
+  "McLargeHuge/Trapper Return", // ensure we don't need clovers for ore
   "Palindome/Protesters",
 
   // Finish remaining quests

@@ -5,7 +5,6 @@ import {
   cliExecute,
   Familiar,
   familiarWeight,
-  getWorkshed,
   gnomadsAvailable,
   hermit,
   itemAmount,
@@ -22,7 +21,6 @@ import {
   numericModifier,
   retrieveItem,
   runChoice,
-  totalTurnsPlayed,
   use,
   visitUrl,
   weightAdjustment,
@@ -37,6 +35,7 @@ import {
   $monsters,
   $skill,
   $stat,
+  ensureEffect,
   get,
   getSaleValue,
   have,
@@ -285,6 +284,10 @@ export const MiscQuest: Quest = {
               runChoice(1);
             }
             return;
+          case $location`The Icy Peak`:
+            if (numericModifier("cold resistance") < 5) ensureEffect($effect`Red Door Syndrome`);
+            if (numericModifier("cold resistance") < 5) throw `Unable to ensure cold res for The Icy Peak`;
+            return;
           default:
             return;
         }
@@ -350,22 +353,6 @@ export const MiscQuest: Quest = {
       },
       limit: { tries: 1 },
       freeaction: true,
-    },
-    {
-      name: "Acquire Cold Medicine Gear",
-      after: [],
-      priority: () => OverridePriority.Free,
-      completed: () => have($item`ice crown`) && have($item`frozen jeans`),
-      ready: () =>
-        getWorkshed() === $item`cold medicine cabinet` &&
-        get("_coldMedicineConsults") < 5 &&
-        get("_nextColdMedicineConsult") <= totalTurnsPlayed(),
-      do: () => {
-        visitUrl("campground.php?action=workshed");
-        runChoice(1);
-      },
-      freeaction: true,
-      limit: { tries: 2 },
     },
     {
       name: "Goose Exp",

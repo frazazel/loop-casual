@@ -159,7 +159,8 @@ export class Engine {
     this.check_limits(task);
 
     // Get needed items
-    for (const to_get of task.acquire || []) {
+    const acquire = typeof task.acquire === "function" ? task.acquire() : task.acquire ?? [];
+    for (const to_get of acquire) {
       const num_needed = to_get.num ?? 1;
       const num_have = itemAmount(to_get.item) + equippedAmount(to_get.item);
       if (num_needed <= num_have) continue;
@@ -373,7 +374,15 @@ export class Engine {
     } else {
       // Prepare only as requested by the task
       applyEffects(outfit.modifier ?? "", task.effects || []);
-      outfit.dress();
+      try {
+        outfit.dress();
+      } catch {
+        // If we fail to dress, this is maybe just a mafia desync.
+        // So refresh our inventory and try again (once).
+        debug("Possible mafia desync detected; refreshing...");
+        cliExecute("refresh all");
+        outfit.dress();
+      }
     }
 
     // Prepare choice selections
@@ -562,10 +571,8 @@ function absorbConsumables(): void {
 
 function getExtros(): void {
   if (getWorkshed() !== $item`cold medicine cabinet`) return;
-  if (!have($item`ice crown`)) return;
-  if (!have($item`frozen jeans`)) return;
   if (
-    get("_coldMedicineConsults") >= 5 ||
+    get("_coldMedicineConsults") >= 4 ||
     get("_nextColdMedicineConsult") > totalTurnsPlayed()
   ) {
     return;

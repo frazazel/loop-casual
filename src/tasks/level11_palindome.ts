@@ -14,13 +14,11 @@ import {
 } from "kolmafia";
 import {
   $effect,
-  $familiar,
   $item,
   $items,
   $location,
   $monster,
   $monsters,
-  $skill,
   $stat,
   ensureEffect,
   get,
@@ -147,6 +145,50 @@ const Copperhead: Task[] = [
     limit: { soft: 10 },
     delay: 5,
   },
+  {
+    name: "Sleaze Star Snake",
+    after: ["Copperhead Start", "Giant/Unlock HITS"],
+    ready: () =>
+      shenItem($item`The Eye of the Stars`),
+    completed: () => step("questL11Shen") === 999 || have($item`The Eye of the Stars`),
+    do: $location`The Hole in the Sky`,
+    combat: new CombatStrategy().killHard($monster`The Snake With Like Ten Heads`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
+  {
+    name: "Sleaze Frat Snake",
+    after: ["Copperhead Start"],
+    ready: () =>
+      shenItem($item`The Lacrosse Stick of Lacoronado`),
+    completed: () => step("questL11Shen") === 999 || have($item`The Lacrosse Stick of Lacoronado`),
+    do: $location`The Smut Orc Logging Camp`,
+    combat: new CombatStrategy().killHard($monster`The Frattlesnake`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
+  {
+    name: "Spooky Snake Precrypt",
+    after: ["Copperhead Start"],
+    ready: () =>
+      shenItem($item`The Shield of Brook`) && step("questL07Cyrptic") < 999,
+    completed: () => step("questL11Shen") === 999 || have($item`The Shield of Brook`),
+    do: $location`The Unquiet Garves`,
+    combat: new CombatStrategy().killHard($monster`Snakeleton`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
+  {
+    name: "Spooky Snake Postcrypt",
+    after: ["Copperhead Start"],
+    ready: () =>
+      shenItem($item`The Shield of Brook`) && step("questL07Cyrptic") === 999,
+    completed: () => step("questL11Shen") === 999 || have($item`The Shield of Brook`),
+    do: $location`The VERY Unquiet Garves`,
+    combat: new CombatStrategy().killHard($monster`Snakeleton`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
 ];
 
 const Zepplin: Task[] = [
@@ -166,25 +208,16 @@ const Zepplin: Task[] = [
     ready: () =>
       canEquip($item`transparent pants`) &&
       (itemAmount($item`11-leaf clover`) > 1 ||
-        ((have($item`Flamin' Whatshisname`) || step("questL11Shen") === 999) &&
-          (get("camelSpit") < 100 || !have($effect`Everything Looks Yellow`)))),
+        (have($item`Flamin' Whatshisname`) || step("questL11Shen") === 999)),
     prepare: () => {
       if (have($item`lynyrd musk`)) ensureEffect($effect`Musky`);
       if (itemAmount($item`11-leaf clover`) > 1 && !have($effect`Lucky!`))
         use($item`11-leaf clover`);
     },
-    acquire: [{ item: $item`yellow rocket`, useful: () => get("camelSpit") >= 100 }],
     completed: () => get("zeppelinProtestors") >= 80,
     do: $location`A Mob of Zeppelin Protesters`,
     combat: new CombatStrategy()
       .macro(new Macro().tryItem($item`cigarette lighter`))
-      .macro(
-        () =>
-          get("camelSpit") >= 100
-            ? new Macro().trySkill($skill`%fn, spit on them!`).tryItem($item`yellow rocket`)
-            : new Macro(),
-        $monster`Blue Oyster cultist`
-      )
       .killHard($monster`The Nuge`)
       .killItem($monster`Blue Oyster cultist`)
       .killItem($monster`lynyrd skinner`)
@@ -200,12 +233,6 @@ const Zepplin: Task[] = [
           modifier: "sleaze dmg, sleaze spell dmg",
           equip: sleazeitems,
           skipDefaults: true,
-        };
-      if (have($familiar`Melodramedary`) && get("camelSpit") >= 100)
-        return {
-          modifier: "-combat, item",
-          familiar: $familiar`Melodramedary`,
-          equip: sleazeitems,
         };
       return {
         modifier: "-combat, sleaze dmg, sleaze spell dmg",
@@ -259,6 +286,10 @@ const Dome: Task[] = [
       "Cold Snake",
       "Hot Snake Precastle",
       "Hot Snake Postcastle",
+      "Sleaze Star Snake",
+      "Sleaze Frat Snake",
+      "Spooky Snake Precrypt",
+      "Spooky Snake Postcrypt"
     ],
     completed: () => have($item`Talisman o' Namsilat`),
     do: () => create($item`Talisman o' Namsilat`),
