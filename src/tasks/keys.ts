@@ -34,7 +34,6 @@ import { Quest, step, Task } from "./structure";
 import { OverridePriority } from "../priority";
 import { GameState } from "../state";
 import { towerReady, towerSkip } from "./level13";
-import { args } from "../main";
 
 export enum Keys {
   Deck = "Deck",
@@ -74,7 +73,7 @@ const heroKeys: KeyTask[] = [
         (have($item`Pick-O-Matic lockpicks`) &&
           have($item`ring of Detect Boring Doors`) &&
           have($item`eleven-foot pole`))) && towerReady(),
-    after: ["Pull/daily dungeon malware"],
+    after: [],
     completed: () => get("dailyDungeonDone") || get("_dailyDungeonMalwareUsed"),
     prepare: () => {
       set("_loop_gyou_malware_amount", itemAmount($item`daily dungeon malware`));
@@ -172,7 +171,7 @@ const heroKeys: KeyTask[] = [
   {
     which: Keys.Zap,
     possible: () => get("lastZapperWandExplosionDay") <= 0,
-    after: ["Pull/Key Zappable", "Wand/Wand"],
+    after: ["Wand/Wand"],
     ready: () => towerReady(),
     completed: () =>
       get("lastZapperWandExplosionDay") >= 1 || (get("_zapCount") >= 1 && !have(keyStrategy.getZapChoice())),
@@ -360,7 +359,7 @@ export const KeysQuest: Quest = {
 
 function keyCount(): number {
   let count = itemAmount($item`fat loot token`);
-  if (args.delaytower) count += storageAmount($item`fat loot token`);
+  if (towerSkip()) count += storageAmount($item`fat loot token`);
   if (have($item`Boris's key`) || get("nsTowerDoorKeysUsed").includes("Boris")) count++;
   if (have($item`Jarlsberg's key`) || get("nsTowerDoorKeysUsed").includes("Jarlsberg")) count++;
   if (have($item`Sneaky Pete's key`) || get("nsTowerDoorKeysUsed").includes("Sneaky Pete")) count++;

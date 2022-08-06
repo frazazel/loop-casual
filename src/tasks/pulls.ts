@@ -1,9 +1,10 @@
-import { buyUsingStorage, cliExecute, inHardcore, Item, itemAmount, myMeat, myTurncount, storageAmount } from "kolmafia";
+import { buyUsingStorage, cliExecute, inHardcore, Item, itemAmount, myMeat, myTurncount, pullsRemaining, storageAmount } from "kolmafia";
 import { $familiar, $item, $items, $skill, get, have } from "libram";
 import { args } from "../main";
 import { OverridePriority } from "../priority";
 import { Quest, step, Task } from "./structure";
 import { Keys, keyStrategy } from "./keys";
+import { towerSkip } from "./level13";
 
 /**
  * optional: If true, only pull this if there is one in storage (i.e., no mall buy).
@@ -20,8 +21,8 @@ type PullSpec = {
 
 export const pulls: PullSpec[] = [
   // Always pull the key items first
-  { pull: $item`daily dungeon malware`, useful: () => keyStrategy.useful(Keys.Malware) && !args.delaytower },
-  { name: "Key Zappable", pull: () => keyStrategy.getZapChoice(), useful: () => keyStrategy.useful(Keys.Zap) && !args.delaytower, duplicate: true },
+  { pull: $item`daily dungeon malware`, useful: () => keyStrategy.useful(Keys.Malware) && !towerSkip() },
+  { name: "Key Zappable", pull: () => keyStrategy.getZapChoice(), useful: () => keyStrategy.useful(Keys.Zap) && !towerSkip(), duplicate: true },
   {
     name: "Ore",
     pull: () => (get("trapperOre") === "" ? undefined : Item.get(get("trapperOre"))),
@@ -188,7 +189,7 @@ class PullStrategy {
         .map((id) => Item.get(id))
     );
 
-    let count = args.pulls - pulled.size;
+    let count = pullsRemaining() - (20 - args.pulls);
     if (inHardcore() || myTurncount() >= 1000) count = 0; // No pulls in hardcore or out of ronin
 
     for (let i = 0; i < this.pulls.length; i++) {
