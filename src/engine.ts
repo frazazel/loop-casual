@@ -350,8 +350,8 @@ export class Engine {
 
       // HP/MP upkeep
       if (myHp() < 50 && myHp() < myMaxhp()) restoreHp(myMaxhp() < 50 ? myMaxhp() : 50);
-      if (myMp() < 40 && myMaxmp() >= 40) restoreMp(40);
-      else if (myMp() < 20) restoreMp(20);
+      if (myMp() < 40 && myMaxmp() >= 40) customRestoreMp(40);
+      else if (myMp() < 20) customRestoreMp(20);
 
       // Prepare combat macro (after effects and outfit)
       const combat = new BuiltCombatStrategy(
@@ -516,7 +516,7 @@ function autosellJunk(): void {
   if (have($item`pork elf goodies sack`)) use($item`pork elf goodies sack`);
 
   // Sell junk items
-  const junk = $items`hamethyst, baconstone, meat stack, dense meat stack, facsimile dictionary, space blanket, 1\,970 carat gold, black snake skin, demon skin, hellion cube, adder bladder, weremoose spit, Knob Goblin firecracker, wussiness potion, diamond-studded cane, Knob Goblin tongs, Knob Goblin scimitar, eggbeater, red-hot sausage fork, Knob Goblin pants, awful poetry journal, black pixel, pile of dusty animal bones`;
+  const junk = $items`hamethyst, baconstone, meat stack, dense meat stack, facsimile dictionary, space blanket, 1\,970 carat gold, black snake skin, demon skin, hellion cube, adder bladder, weremoose spit, Knob Goblin firecracker, wussiness potion, diamond-studded cane, Knob Goblin tongs, Knob Goblin scimitar, eggbeater, red-hot sausage fork, Knob Goblin pants, awful poetry journal, black pixel, pile of dusty animal bones, 1952 Mickey Mantle card`;
   for (const item of junk) {
     if (have(item)) autosell(item, itemAmount(item));
   }
@@ -572,7 +572,7 @@ function absorbConsumables(): void {
 function getExtros(): void {
   if (getWorkshed() !== $item`cold medicine cabinet`) return;
   if (
-    get("_coldMedicineConsults") >= 4 ||
+    get("_coldMedicineConsults") >= 5 ||
     get("_nextColdMedicineConsult") > totalTurnsPlayed()
   ) {
     return;
@@ -588,4 +588,12 @@ function getExtros(): void {
       return;
     }
   }
+}
+
+export function customRestoreMp(target: number) {
+  if (get("sweat", 0) >= 80) {
+    // Use visit URL to avoid needing to equip the pants
+    visitUrl("runskillz.php?action=Skillz&whichskill=7420&targetplayer=0&pwd&quantity=1");
+  }
+  restoreMp(target);
 }

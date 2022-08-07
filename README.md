@@ -17,7 +17,7 @@ svn checkout https://github.com/Kasekopf/loop-casual/branches/release/
 ### Usage
 
 1. In aftercore, run `loopgyou sim` to verify that the script is installed, and to confirm that you meet the requirements (see below for more details).
-2. Ascend into a Grey You Softcore run. The cold medicine cabinet is required in your workshed. Prefer the Vole sign until you have finished most of the path progression. Astral mask or astral belt are both useful, but neither is required. Prefer candles for your eurdora.
+2. Ascend into a Grey You Softcore run. Prefer the Vole sign until you have finished most of the path progression. Astral mask or astral belt are both useful, but neither is required. Prefer candles for your eurdora. No particular workshed is required, but only cold medicine cabinet is used at the moment.
 3. Run `loopgyou` and watch it go! If you are more hesitent, you can run `loopgyou actions 10` to only do 10 things and stop.
 
 Run `loopgyou help` for the full set of script options:
@@ -28,17 +28,20 @@ Options:
   sim - Check if you have the requirements to run this script.
   version - Show script version and exit.
   actions NUMBER - Maximum number of actions to perform, if given. Can be used to execute just a few steps at a time. [setting: loopgyou_actions]
-  class NUMBER - If given, break the prism and choose a class at the end of the run. You will be reduced to 40 adventures with full organs after breaking the prism. [default: 0] [setting: loopgyou_class]
-    class 0 - Stay as Grey You
+  class NUMBER - If given, break the prism and choose a class. You will be reduced to 40 adventures with full organs after breaking the prism. [setting: loopgyou_class]
     class 1 - Seal Clubber
     class 2 - Turtle Tamer
     class 3 - Pastamancer
     class 4 - Saurceror
     class 5 - Disco Bandit
     class 6 - Accordion Thief
-  pulls NUMBER - Number of pulls to use. Lower this if you would like to save some pulls for in-ronin farming. [default: 20] [setting: loopgyou_pulls]
+  pulls NUMBER - Number of pulls to use. Lower this if you would like to save some pulls to use for in-ronin farming. (Note that this argument is not needed if you pull all your farming items before running the script). [default: 20] [setting: loopgyou_pulls]
   verboseequip - Print out equipment usage before each task. [setting: loopgyou_verboseequip]
   tune TEXT - Use your hewn moon-rune spoon to retune to this sign when optimal. [setting: loopgyou_tune]
+  delaytower - Delay the NS tower until after ronin ends. [default: false] [setting: loopgyou_delaytower]
+  fax BOOLEAN - Use a fax to summon a monster. Set to false if the faxbots are offline. [default: true] [setting: loopgyou_fax]
+  ignoretasks TEXT - A comma-separated list of task names that should not be done. Can be used as a workaround for script bugs where a task is crashing.
+  completedtasks TEXT - A comma-separated list of task names the should be treated as completed. Can be used as a workaround for script bugs.
   help - Show this message and exit.
 ```
 
@@ -50,8 +53,7 @@ Run `loopgyou sim` to see "Is the script intended to work unmodified on my chara
 > loopgyou sim
 Checking your character... Legend: ✓ Have / X Missing & Required / X Missing & Optional
 IoTMs
-✓ Clan VIP Lounge key - YRs, -combat
-✓ Cold medicine cabinet - QoL Equipment
+✓ Clan VIP Lounge key - YRs, +combat
 ✓ grey gosling - Adventures
 
 IoTMs (Optional)
@@ -59,10 +61,11 @@ IoTMs (Optional)
 ✓ backup camera - Lobsterfrogmen, ML, init
 ✓ bottled Vampire Vintner - Pygmy killing
 ✓ Cargo Cultist Shorts - Mountain man
+✓ Cold medicine cabinet - Get Extrovermectin for profit
 ✓ combat lover's locket - Reminiscing
 ✓ Cosmic bowling ball - Banishes, Pygmy killing
 ✓ cursed magnifying glass - Lobsterfrogmen, delay
-✓ Deck of Every Card - Get a key for the NS tower
+✓ Deck of Every Card - A key for the NS tower, stone wool, ore
 ✓ designer sweatpants - Sleaze damage
 ✓ fresh coat of paint - Minor boosts in moxie sign
 ✓ haunted doghouse - Ghost dog chow
@@ -74,23 +77,24 @@ IoTMs (Optional)
 ✓ Powerful Glove - Pixels and lobsterfrogmen
 ✓ protonic accelerator pack - Wanderers
 ✓ shortest-order cook - Kill the Wall of Skin, initial exp
-✓ SongBoom™ BoomBox - In-run meat source
-✓ SpinMaster™ lathe - Equipment
-✓ Summon Clip Art - Amulet coin (via familiar jacks)
+✓ SongBoom™ BoomBox - Meat and special seasonings
+✓ SpinMaster™ lathe - QoL equipment
+✓ Summon Clip Art - Amulet coin
 ✓ unbreakable umbrella - -combat modifier, ML
 ✓ unwrapped knock-off retro superhero cape - Slay the dead in crypt, pygmy killing
 
 Combat Lover's Locket Monsters (Optional)
-✓ cloud of disembodied whiskers - For absorbing adventures
-✓ Little Man in the Canoe - For absorbing adventures
-✓ mountain man - For ore
-✓ One-Eyed Willie - For absorbing adventures
-✓ pygmy witch lawyer - For Infinite Loop
-✓ revolving bugbear - For absorbing adventures
-✓ vicious gnauga - For absorbing adventures
+✓ cloud of disembodied whiskers - Absorbing adventures
+✓ Little Man in the Canoe - Absorbing adventures
+✓ mountain man - Ore
+✓ One-Eyed Willie - Absorbing adventures
+✓ pygmy witch lawyer - Infinite Loop
+✓ revolving bugbear - Absorbing adventures
+✓ vicious gnauga - Absorbing adventures
 
 Miscellany (Optional)
 ✓ Cornbeefadon - Amulet coin, with clip art
+✓ Great Wolf's rocket launcher OR Drunkula's bell - Kill the wall of bones (with delaytower)
 ✓ hobo monkey - Meat drops
 ✓ woim - Bonus initiative
 

@@ -46,6 +46,14 @@ export const pulls: PullSpec[] = [
     },
   },
   {
+    pull: $item`1952 Mickey Mantle card`,
+    useful: () => {
+      if (have($item`forged identification documents`) || step("questL11Black") >= 4) return false;
+      if (step("questL11Black") >= 2 && myTurncount() >= 200) return true;
+      return undefined;
+    },
+  },
+  {
     pull: $items`Greatest American Pants, navel ring of navel gazing`,
     optional: true,
     name: "Runaway IoTM",
@@ -57,6 +65,12 @@ export const pulls: PullSpec[] = [
       !have($item`Space Trip safety headphones`) &&
       storageAmount($item`Space Trip safety headphones`) === 0 &&
       !have($item`protonic accelerator pack`),
+  },
+  {
+    pull: $items`warbear long johns, square sponge pants`,
+    useful: () => !have($item`designer sweatpants`),
+    optional: true,
+    name: "MP Regen Pants"
   },
   { pull: $item`white page` },
   { pull: $item`portable cassette player` },
