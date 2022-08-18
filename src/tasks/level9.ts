@@ -135,6 +135,7 @@ const Oil: Task[] = [
         };
       else return { modifier: "ML, 0.1 item" };
     },
+    combat: new CombatStrategy().killItem(),
     limit: { soft: 5 },
     orbtargets: undefined,
   },
@@ -313,7 +314,7 @@ export const ChasmQuest: Quest = {
             else if (have($item`industrial fire extinguisher`)) equip.push($item`industrial fire extinguisher`);
           }
           return {
-            modifier: "item",
+            modifier: "item, -ML",
             equip: equip,
           };
         }
