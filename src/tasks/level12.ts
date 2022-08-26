@@ -41,6 +41,7 @@ const Flyers: Task[] = [
   {
     name: "Flyers End",
     after: ["Flyers Start"],
+    priority: () => OverridePriority.Free,
     ready: () => flyersDone(), // Buffer for mafia tracking
     completed: () => get("sidequestArenaCompleted") !== "none",
     outfit: { equip: $items`beer helmet, distressed denim pants, bejeweled pledge pin` },
@@ -271,7 +272,6 @@ const Orchard: Task[] = [
     completed: () =>
       have($item`heart of the filthworm queen`) || get("sidequestOrchardCompleted") !== "none",
     do: $location`The Filthworm Queen's Chamber`,
-    outfit: { modifier: "items" },
     effects: $effects`Filthworm Guard Stench`,
     combat: new CombatStrategy(true).kill(),
     limit: { tries: 2 }, // allow wanderer
