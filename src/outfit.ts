@@ -158,7 +158,7 @@ export class Outfit {
     }
   }
 
-  dress(): void {
+  dress(forceUpdate = false): void {
     if (this.familiar !== undefined) useFamiliar(this.familiar);
     const targetEquipment = Array.from(this.equips.values());
     const accessorySlots = $slots`acc1, acc2, acc3`;
@@ -213,6 +213,7 @@ export class Outfit {
       let requirements = Requirement.merge([
         new Requirement([this.modifier, "0.01 MP regen, 0.001 HP regen"], {
           forceEquip: targetEquipment.concat(...accessoryEquips),
+          forceUpdate: forceUpdate,
         }),
       ]);
 
@@ -242,6 +243,7 @@ export class Outfit {
         ]);
       }
 
+      // Libram outfit cache may not autofold umbrella, so we need to
       if (have($item`unbreakable umbrella`)) {
         if (this.modifier.includes("-combat")) {
           if (get("umbrellaState") !== "cocoon") cliExecute("umbrella cocoon");
@@ -256,6 +258,7 @@ export class Outfit {
     }
 
     // Do not use +ML backup camera unless specifically needed
+    // Libram outfit cache may not autofold camera, so we need to
     if (equippedAmount($item`backup camera`) > 0) {
       if ((!this.modifier || !this.modifier.includes("ML")) &&
         get("backupCameraMode").toLowerCase() === "ml"
@@ -264,6 +267,13 @@ export class Outfit {
       }
       if (!get("backupCameraReverserEnabled")) {
         cliExecute("backupcamera reverser on");
+      }
+    }
+
+    // Libram outfit cache may not autofold cape, so we need to
+    if (equippedAmount($item`unwrapped knock-off retro superhero cape`) > 0) {
+      if (this.modifier?.includes("res") && (get("retroCapeSuperhero") !== "vampire") || get("retroCapeWashingInstructions") !== "hold") {
+        cliExecute("retrocape vampire hold");
       }
     }
   }
@@ -342,6 +352,13 @@ export class Outfit {
       this.equip($item`gnomish housemaid's kgnee`);
 
     if (myBasestat($stat`muscle`) >= 40) this.equip($item`mafia thumb ring`);
+
+    if (myBasestat($stat`moxie`) <= 200) {
+      // Equip some extra equipment for early survivability
+      this.equip($item`plastic vampire fangs`);
+      this.equip($item`warbear goggles`);
+      this.equip($item`burning paper slippers`);
+    }
 
     if (!this.modifier) {
       // Default outfit

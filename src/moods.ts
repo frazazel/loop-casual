@@ -20,22 +20,8 @@ function getRelevantEffects(): { [modifier: string]: Effect[] } {
     "-combat": [],
     "+combat": [],
     " combat": [], // Maximizer has issues with "50 +combat" and similar
-    mainstat: [],
   };
 
-  // Glitches if given above
-  result["mainstat"].push($effect`That's Just Cloud-Talk, Man`);
-
-  // One-per-day
-  if (!get("_ballpit")) result["mainstat"].push($effect`Having a Ball!`);
-  if (!get("_lyleFavored")) result["mainstat"].push($effect`Favored by Lyle`);
-  if (!get("telescopeLookedHigh")) result["mainstat"].push($effect`Starry-Eyed`);
-  if (get("spacegateAlways") && get("spacegateVaccine2") && !get("_spacegateVaccine"))
-    result["mainstat"].push($effect`Broad-Spectrum Vaccine`);
-  if (have($skill`Emotionally Chipped`) && get("_feelExcitementUsed") < 3)
-    result["mainstat"].push($effect`Feeling Excited`);
-  if (have($item`protonic accelerator pack`) && !get("_streamsCrossed"))
-    result["mainstat"].push($effect`Total Protonic Reversal`);
   if (have($item`Clan VIP Lounge key`) && (!get("_olympicSwimmingPool") || have($effect`Silent Running`)))
     result["-combat"].push($effect`Silent Running`);
 
@@ -59,11 +45,9 @@ export function moodCompatible(modifier: string | undefined): boolean {
   // while under -combat effects, and vice-versa.
   if (modifier === undefined) return true;
   if (modifier.includes("+combat") || modifier.includes(" combat")) {
-    // eslint-disable-next-line libram/verify-constants
     return !have($effect`Shifted Phase`) && !have($effect`Darkened Photons`);
   }
   if (modifier.includes("-combat")) {
-    // eslint-disable-next-line libram/verify-constants
     return !have($effect`Hooooooooonk!`);
   }
   return true;

@@ -264,6 +264,7 @@ const absorbTasks: AbsorbTask[] = [
         equip(slot, $item`none`);
       }
 
+      if (numericModifier("Monster Level") >= 100 && currentMcd() > 0) changeMcd(0);
       if (numericModifier("Monster Level") < 50 && currentMcd() < 10) changeMcd(10);
       if (numericModifier("Monster Level") < 50 || numericModifier("Monster Level") >= 100)
         throw `Unable to get 50-99 ML for oil barons`;
@@ -727,7 +728,7 @@ const usefulMonsters = new Set<Monster>([...reprocessTargets, ...usefulSkills.va
 function monstersAt(location: Location): Monster[] {
   const result = Object.entries(appearanceRates(location))
     .filter((i) => i[1] !== -2) // Avoid impossible monsters
-    .map((i) => Monster.get<Monster>(i[0]));
+    .map((i) => Monster.get(i[0]));
   return result;
 }
 
@@ -966,10 +967,11 @@ export const ReprocessQuest: Quest = {
   ],
 };
 
-export function coldRes(with_black_paint: boolean): number {
+export function coldRes(with_black_paint: boolean, with_back = true): number {
   let res = 0;
   if (have($item`ice crown`)) res += 3;
-  if (have($item`unwrapped knock-off retro superhero cape`)) res += 3;
+  if (with_back && have($item`unwrapped knock-off retro superhero cape`)) res += 3;
+  if (have($item`ghost of a necklace`)) res += 1;
   if (have($skill`Nanofur`)) res += 3;
   if (have($skill`Microweave`)) res += 2;
   if (with_black_paint && (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))) res += 2;
@@ -980,6 +982,7 @@ export function stenchRes(with_black_paint: boolean): number {
   let res = 0;
   if (have($item`ice crown`)) res += 3;
   if (have($item`unwrapped knock-off retro superhero cape`)) res += 3;
+  if (have($item`ghost of a necklace`)) res += 1;
   if (have($skill`Conifer Polymers`)) res += 3;
   if (have($skill`Clammy Microcilia`)) res += 2;
   if (with_black_paint && (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))) res += 2;

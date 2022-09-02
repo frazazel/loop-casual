@@ -109,7 +109,8 @@ export function main(command?: string): void {
   }
   if (args.version) return;
 
-  if (myPath() !== "Grey You") throw `You are not currently in a Grey You run. Please start one.`;
+  // eslint-disable-next-line eqeqeq
+  if (myPath() != "Grey You") throw `You are not currently in a Grey You run. Please start one.`;
 
   // Break the prism and exit if requested
   if (args.class !== undefined) {
@@ -190,7 +191,8 @@ export function main(command?: string): void {
 
       if (next[2] !== undefined) state = engine.execute(next[0], next[1], state, next[2]);
       else state = engine.execute(next[0], next[1], state);
-      if (myPath() !== "Grey You") break; // Prism broken
+      // eslint-disable-next-line eqeqeq
+      if (myPath() != "Grey You") break; // Prism broken
     }
 
     const remaining_tasks = tasks.filter((task) => !task.completed(state));
@@ -226,7 +228,8 @@ export function main(command?: string): void {
       "purple"
     );
   print(`   Pulls used: ${pullStrategy.pullsUsed()}`, "purple");
-  if (myPath() === "Grey You") {
+  // eslint-disable-next-line eqeqeq
+  if (myPath() != "Grey You") {
     print(
       `   Monsters remaining: ${Array.from(state.absorb.remainingAbsorbs()).join(", ")}`,
       "purple"
@@ -286,7 +289,7 @@ function getNextTask(
 
 function runComplete(): boolean {
   return step("questL13Final") > 11
-    || myPath() !== "Grey You"
+    || myPath() != "Grey You"
     || (args.delaytower && myTurncount() < 1000 && step("questL13Final") !== -1);
 }
 

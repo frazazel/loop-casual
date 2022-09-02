@@ -1,4 +1,4 @@
-import { buyUsingStorage, cliExecute, inHardcore, Item, itemAmount, myMeat, myTurncount, pullsRemaining, storageAmount } from "kolmafia";
+import { buyUsingStorage, cliExecute, inHardcore, Item, itemAmount, myMeat, myTurncount, pullsRemaining, retrieveItem, storageAmount } from "kolmafia";
 import { $familiar, $item, $items, $skill, get, have } from "libram";
 import { args } from "../main";
 import { OverridePriority } from "../priority";
@@ -17,6 +17,7 @@ type PullSpec = {
   optional?: boolean;
   useful?: () => boolean | undefined;
   duplicate?: boolean;
+  post?: () => void;
 } & ({ pull: Item } | { pull: Item[] | (() => Item | undefined); name: string });
 
 export const pulls: PullSpec[] = [
@@ -72,7 +73,16 @@ export const pulls: PullSpec[] = [
     optional: true,
     name: "MP Regen Pants"
   },
-  { pull: $item`white page` },
+  {
+    pull: $items`plastic vampire fangs, warbear goggles, burning newspaper`,
+    useful: () => !have($item`designer sweatpants`) && get("greyYouPoints") < 11 && !have($item`burning paper slippers`),
+    optional: true,
+    post: () => {
+      if (have($item`burning newspaper`)) retrieveItem($item`burning paper slippers`);
+    },
+    name: "Max HP with low path progression"
+  },
+  { pull: $item`white page`, useful: () => !have($skill`Piezoelectric Honk`) },
   { pull: $item`portable cassette player` },
   { pull: $item`antique machete` },
   { pull: $item`book of matches` },
@@ -124,10 +134,13 @@ class Pull {
   optional: boolean;
   duplicate: boolean;
   useful: () => boolean | undefined;
+  post: () => void;
+  description?: string;
 
   constructor(spec: PullSpec) {
     if ("name" in spec) {
       this.name = spec.name;
+      this.description = spec.name;
     } else {
       this.name = spec.pull.name;
     }
@@ -142,6 +155,7 @@ class Pull {
     this.duplicate = spec.duplicate ?? false;
     this.optional = spec.optional ?? false;
     this.useful = spec.useful ?? (() => true);
+    this.post = spec.post ?? (() => { null; });
   }
 
   public wasPulled(pulled: Set<Item>) {
@@ -248,6 +262,7 @@ export const PullQuest: Quest = {
           pullStrategy.enabled[index] === PullState.UNNEEDED,
         do: () => pull.pull(),
         post: () => {
+          pull.post();
           pullStrategy.update();
         },
         limit: { tries: 1 },
