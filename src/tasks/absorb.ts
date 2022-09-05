@@ -259,7 +259,8 @@ const absorbTasks: AbsorbTask[] = [
 
         const item = equippedItem(slot);
         if (item === $item`none`) continue;
-        if (numericModifier(item, "Monster Level") === 0) continue;
+        // eslint-disable-next-line libram/verify-constants
+        if (numericModifier(item, "Monster Level") === 0 && item !== $item`Jurassic Parka`) continue;
         if (item === $item`backup camera`) continue; // Always keep equipped to ensure we can get to 50
         equip(slot, $item`none`);
       }
@@ -337,6 +338,7 @@ const absorbTasks: AbsorbTask[] = [
         return get("relocatePygmyJanitor") === myAscensions() ? 2 : 3;
       },
     },
+    skill: $skill`System Sweep`,
   },
   {
     do: $location`The Hidden Apartment Building`,

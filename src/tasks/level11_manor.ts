@@ -1,4 +1,4 @@
-import { create, myInebriety, use, visitUrl } from "kolmafia";
+import { changeMcd, create, currentMcd, myInebriety, numericModifier, use, visitUrl } from "kolmafia";
 import {
   $effect,
   $item,
@@ -10,7 +10,7 @@ import {
   get,
   have,
 } from "libram";
-import { Quest, step, Task } from "./structure";
+import { OutfitSpec, Quest, step, Task } from "./structure";
 import { CombatStrategy } from "../combat";
 import { OverridePriority } from "../priority";
 
@@ -270,8 +270,17 @@ const ManorBasement: Task[] = [
     name: "Boiler Room",
     after: ["Fulminate"],
     completed: () => have($item`wine bomb`) || step("questL11Manor") >= 3,
+    prepare: () => {
+      if (numericModifier("Monster Level") < 81) changeMcd(10);
+    },
+    post: () => { if (currentMcd() > 0) changeMcd(0); },
     do: $location`The Haunted Boiler Room`,
-    outfit: { modifier: "ML", equip: $items`unstable fulminate, transparent pants` },
+    outfit: (): OutfitSpec => {
+      if (have($item`old patched suit-pants`) && have($item`backup camera`))
+        // eslint-disable-next-line libram/verify-constants
+        return { modifier: "ML", equip: $items`unstable fulminate, old patched suit-pants`, avoid: $items`Jurassic Parka` };
+      return { modifier: "ML", equip: $items`unstable fulminate, old patched suit-pants` };
+    },
     choices: { 902: 2 },
     combat: new CombatStrategy()
       .kill($monster`monstrous boiler`)
