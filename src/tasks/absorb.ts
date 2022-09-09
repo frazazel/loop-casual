@@ -38,12 +38,13 @@ import {
   have,
   Macro,
 } from "libram";
-import { CombatStrategy } from "../combat";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
-import { OverridePriority } from "../priority";
-import { GameState } from "../state";
+import { OverridePriority } from "../engine/priority";
+import { globalStateCache } from "../engine/state";
 import { towerSkip } from "./level13";
-import { Limit, Quest, step, Task } from "./structure";
+import { Quest, Task } from "../engine/task";
+import { Limit, step } from "grimoire-kolmafia";
 
 // Add a shorthand for expressing absorption-only tasks; there are a lot.
 interface AbsorbTask extends Omit<Task, "name" | "limit" | "completed"> {
@@ -76,7 +77,8 @@ const absorbTasks: AbsorbTask[] = [
     ready: () => stenchRes(true) >= 1,
     prepare: () => {
       if (numericModifier("stench resistance") < 1) ensureEffect($effect`Red Door Syndrome`);
-      if (numericModifier("stench resistance") < 1) throw `Unable to ensure cold res for The Icy Peak`;
+      if (numericModifier("stench resistance") < 1)
+        throw `Unable to ensure cold res for The Icy Peak`;
     },
     after: ["Bat/Get Sonar 3"],
     choices: { 1427: 2 },
@@ -217,7 +219,8 @@ const absorbTasks: AbsorbTask[] = [
     ready: () => coldRes(true) >= 5,
     prepare: () => {
       if (numericModifier("cold resistance") < 5) ensureEffect($effect`Red Door Syndrome`);
-      if (numericModifier("cold resistance") < 5) throw `Unable to ensure cold res for The Icy Peak`;
+      if (numericModifier("cold resistance") < 5)
+        throw `Unable to ensure cold res for The Icy Peak`;
     },
     outfit: { modifier: "10 cold res 5min, +combat", equip: $items`miniature crystal ball` },
     combat: new CombatStrategy().macro(new Macro().attack().repeat(), $monster`Snow Queen`),
@@ -260,7 +263,8 @@ const absorbTasks: AbsorbTask[] = [
         const item = equippedItem(slot);
         if (item === $item`none`) continue;
         // eslint-disable-next-line libram/verify-constants
-        if (numericModifier(item, "Monster Level") === 0 && item !== $item`Jurassic Parka`) continue;
+        if (numericModifier(item, "Monster Level") === 0 && item !== $item`Jurassic Parka`)
+          continue;
         if (item === $item`backup camera`) continue; // Always keep equipped to ensure we can get to 50
         equip(slot, $item`none`);
       }
@@ -270,7 +274,9 @@ const absorbTasks: AbsorbTask[] = [
       if (numericModifier("Monster Level") < 50 || numericModifier("Monster Level") >= 100)
         throw `Unable to get 50-99 ML for oil barons`;
     },
-    post: () => { if (currentMcd() > 0) changeMcd(0); },
+    post: () => {
+      if (currentMcd() > 0) changeMcd(0);
+    },
     freecombat: true,
     outfit: { modifier: "ML 50min" },
     limit: { tries: 1 },
@@ -898,9 +904,9 @@ export const AbsorbQuest: Quest = {
     ...absorbTasks.map((task): Task => {
       const result = {
         name: task.do.toString(),
-        completed: (state: GameState) => !state.absorb.hasTargets(task.do),
+        completed: () => !globalStateCache.absorb().hasTargets(task.do),
         ...task,
-        after: task.skill ? [...task.after, task.skill.name] : task.after,
+        after: task.skill ? [...(task.after ?? []), task.skill.name] : task.after,
         combat: (task.combat ?? new CombatStrategy()).ignore(), // killing targetting monsters is set in the engine
         limit: { soft: 25 },
       };
@@ -912,7 +918,7 @@ export const AbsorbQuest: Quest = {
       .map((task): Task => {
         const result = {
           name: task.skill?.name ?? "",
-          completed: (state: GameState) => state.absorb.skillCompleted(task.skill ?? $skill`none`),
+          completed: () => globalStateCache.absorb().skillCompleted(task.skill ?? $skill`none`),
           ...task,
           combat: (task.combat ?? new CombatStrategy()).ignore(), // killing targetting monsters is set in the engine
           limit: { soft: 25 },
@@ -942,12 +948,11 @@ export const ReprocessQuest: Quest = {
     ...absorbTasks.map((task): Task => {
       const result = {
         name: task.do.toString(),
-        completed: (state: GameState) => !state.absorb.hasReprocessTargets(task.do),
+        completed: () => !globalStateCache.absorb().hasReprocessTargets(task.do),
         ...task,
-        after: [...task.after, `Absorb/${task.do.toString()}`],
-        ready: (state: GameState) =>
-          (task.ready === undefined || task.ready(state)) &&
-          familiarWeight($familiar`Grey Goose`) >= 6,
+        after: [...(task.after ?? []), `Absorb/${task.do.toString()}`],
+        ready: () =>
+          (task.ready === undefined || task.ready()) && familiarWeight($familiar`Grey Goose`) >= 6,
         combat: (task.combat ?? new CombatStrategy()).ignore(), // killing targetting monsters is set in the engine
         limit: { soft: 25 },
       };
@@ -976,7 +981,11 @@ export function coldRes(with_black_paint: boolean, with_back = true): number {
   if (have($item`ghost of a necklace`)) res += 1;
   if (have($skill`Nanofur`)) res += 3;
   if (have($skill`Microweave`)) res += 2;
-  if (with_black_paint && (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))) res += 2;
+  if (
+    with_black_paint &&
+    (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))
+  )
+    res += 2;
   return res;
 }
 
@@ -987,6 +996,10 @@ export function stenchRes(with_black_paint: boolean): number {
   if (have($item`ghost of a necklace`)) res += 1;
   if (have($skill`Conifer Polymers`)) res += 3;
   if (have($skill`Clammy Microcilia`)) res += 2;
-  if (with_black_paint && (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))) res += 2;
+  if (
+    with_black_paint &&
+    (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))
+  )
+    res += 2;
   return res;
 }

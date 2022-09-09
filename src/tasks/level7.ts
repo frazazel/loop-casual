@@ -11,12 +11,13 @@ import {
   have,
   Macro,
 } from "libram";
-import { OutfitSpec, Quest, step, Task } from "./structure";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { OutfitSpec, step } from "grimoire-kolmafia";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
-import { OverridePriority } from "../priority";
+import { OverridePriority } from "../engine/priority";
 import { councilSafe } from "./level12";
-import { GameState } from "../state";
+import { globalStateCache } from "../engine/state";
 
 function tuneCape(): void {
   if (
@@ -45,9 +46,9 @@ const Alcove: Task[] = [
     name: "Alcove",
     after: ["Start"],
     prepare: tuneCape,
-    ready: (state: GameState) =>
+    ready: () =>
       // Reprocess the grave rober, then wait for the +init skill
-      (state.absorb.hasReprocessTargets($location`The Defiled Alcove`) ||
+      (globalStateCache.absorb().hasReprocessTargets($location`The Defiled Alcove`) ||
         have($skill`Overclocking`) ||
         !!(get("twinPeakProgress") & 8)) &&
       myBasestat($stat`Muscle`) >= 62,
@@ -70,7 +71,8 @@ const Alcove: Task[] = [
     after: ["Start", "Alcove"],
     completed: () => get("cyrptAlcoveEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Alcove`,
-    combat: new CombatStrategy(true).kill(),
+    combat: new CombatStrategy().kill(),
+    boss: true,
     limit: { tries: 1 },
   },
 ];
@@ -85,7 +87,9 @@ const Cranny: Task[] = [
       tuneCape();
       changeMcd(10);
     },
-    post: () => { if (currentMcd() > 0) changeMcd(0); },
+    post: () => {
+      if (currentMcd() > 0) changeMcd(0);
+    },
     do: $location`The Defiled Cranny`,
     outfit: (): OutfitSpec => {
       return {
@@ -97,7 +101,7 @@ const Cranny: Task[] = [
     combat: new CombatStrategy()
       .macro(slay_macro)
       .kill(
-        ...$monsters`swarm of ghuol whelps, big swarm of ghuol whelps, giant swarm of ghuol whelps, huge ghuol`
+        $monsters`swarm of ghuol whelps, big swarm of ghuol whelps, giant swarm of ghuol whelps, huge ghuol`
       ),
     // Do not search for swarm with orb
     orbtargets: () => [],
@@ -108,7 +112,8 @@ const Cranny: Task[] = [
     after: ["Start", "Cranny"],
     completed: () => get("cyrptCrannyEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Cranny`,
-    combat: new CombatStrategy(true).killHard(),
+    combat: new CombatStrategy().killHard(),
+    boss: true,
     limit: { tries: 1 },
   },
 ];
@@ -140,18 +145,18 @@ const Niche: Task[] = [
       .macro(slay_macro, $monster`dirty old lihc`)
       .macro(
         // Don't use the fire extinguisher if we want to absorb the lihc
-        (state: GameState) =>
+        () =>
           new Macro().externalIf(
-            !state.absorb.isTarget($monster`basic lihc`),
+            !globalStateCache.absorb().isTarget($monster`basic lihc`),
             new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`)
           ),
         $monster`basic lihc`
       )
       .macro(
         new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`).step(slay_macro),
-        ...$monsters`senile lihc, slick lihc`
+        $monsters`senile lihc, slick lihc`
       )
-      .banish(...$monsters`basic lihc, senile lihc, slick lihc`),
+      .banish($monsters`basic lihc, senile lihc, slick lihc`),
     orbtargets: () => [$monster`dirty old lihc`],
     limit: { turns: 25 },
   },
@@ -160,7 +165,8 @@ const Niche: Task[] = [
     after: ["Start", "Niche"],
     completed: () => get("cyrptNicheEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Niche`,
-    combat: new CombatStrategy(true).kill(),
+    combat: new CombatStrategy().kill(),
+    boss: true,
     limit: { tries: 1 },
   },
 ];
@@ -186,7 +192,7 @@ const Nook: Task[] = [
     },
     choices: { 155: 5, 1429: 1 },
     combat: new CombatStrategy()
-      .macro(slay_macro, ...$monsters`spiny skelelton, toothy sklelton`)
+      .macro(slay_macro, $monsters`spiny skelelton, toothy sklelton`)
       .banish($monster`party skelteon`),
     limit: { soft: 30 },
   },
@@ -206,7 +212,8 @@ const Nook: Task[] = [
     after: ["Start", "Nook", "Nook Eye"],
     completed: () => get("cyrptNookEvilness") === 0 && step("questL07Cyrptic") !== -1,
     do: $location`The Defiled Nook`,
-    combat: new CombatStrategy(true).killItem(),
+    combat: new CombatStrategy().killItem(),
+    boss: true,
     limit: { tries: 1 },
   },
 ];
@@ -234,7 +241,8 @@ export const CryptQuest: Quest = {
       completed: () => step("questL07Cyrptic") >= 1,
       do: $location`Haert of the Cyrpt`,
       choices: { 527: 1 },
-      combat: new CombatStrategy(true).kill(),
+      combat: new CombatStrategy().kill(),
+      boss: true,
       limit: { tries: 1 },
     },
     {

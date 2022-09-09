@@ -1,5 +1,4 @@
 import {
-  cliExecute,
   gametimeToInt,
   getRevision,
   myAdventures,
@@ -14,21 +13,14 @@ import {
 } from "kolmafia";
 import { all_tasks } from "./tasks/all";
 import { prioritize } from "./route";
-import { Engine } from "./engine";
+import { Engine } from "./engine/engine";
 import { convertMilliseconds, debug } from "./lib";
-import { WandererSource, wandererSources } from "./resources";
-import { $effect, get, have, PropertiesManager, set, sinceKolmafiaRevision } from "libram";
-import { step, Task } from "./tasks/structure";
-import { OverridePriority, Prioritization } from "./priority";
-import { Outfit } from "./outfit";
-import { removeTeleportitis, teleportitisTask } from "./tasks/misc";
-import { Args } from "./args";
+import { get, set, sinceKolmafiaRevision } from "libram";
+import { Prioritization } from "./engine/priority";
+import { Args, step } from "grimoire-kolmafia";
 import { checkRequirements } from "./sim";
-import { pullStrategy } from "./tasks/pulls";
-import { keyStrategy } from "./tasks/keys";
-import { GameState } from "./state";
+import { globalStateCache } from "./engine/state";
 import { lastCommitHash } from "./_git_commit";
-import { summonStrategy } from "./tasks/summons";
 
 const time_property = "_loop_gyou_first_start";
 const svn_name = "Kasekopf-loop-casual-branches-release";
@@ -78,7 +70,10 @@ export const args = Args.create(
     completedtasks: Args.string({
       help: "A comma-separated list of task names the should be treated as completed. Can be used as a workaround for script bugs.",
       setting: "",
-    })
+    }),
+    list: Args.flag({
+      help: "Show the status of all tasks and exit.",
+    }),
   }
 );
 export function main(command?: string): void {
@@ -94,19 +89,7 @@ export function main(command?: string): void {
     return;
   }
 
-  debug(
-    `Running loopgyou version [${lastCommitHash ?? "custom-built"}] in KoLmafia r${getRevision()}`
-  );
-  if (lastCommitHash !== undefined) {
-    if (svnExists(svn_name) && !svnAtHead(svn_name))
-      debug(
-        'A newer version of this script is available and can be obtained with "svn update".',
-        "red"
-      );
-    else if (args.version) {
-      debug("This script is up to date.", "red");
-    }
-  }
+  printVersionInfo();
   if (args.version) return;
 
   // eslint-disable-next-line eqeqeq
@@ -114,21 +97,7 @@ export function main(command?: string): void {
 
   // Break the prism and exit if requested
   if (args.class !== undefined) {
-    if (step("questL13Final") <= 11) throw `You have not finished your Grey You run. Do not set this argument yet.`
-    const state = new GameState();
-    print(
-      `   Monsters remaining: ${Array.from(state.absorb.remainingAbsorbs()).join(", ")}`,
-      "purple"
-    );
-    print(
-      `   Reprocess remaining: ${Array.from(state.absorb.remainingReprocess()).join(", ")}`,
-      "purple"
-    );
-    if (step("questL13Final") === 999) return;
-    visitUrl("place.php?whichplace=nstower&action=ns_11_prism");
-    visitUrl("main.php");
-    runChoice(args.class);
-    runChoice(args.class);
+    breakPrism(args.class);
     return;
   }
 
@@ -141,65 +110,32 @@ export function main(command?: string): void {
     runChoice(-1);
 
   const tasks = prioritize(all_tasks());
-  const engine = new Engine(tasks, args.ignoretasks?.split(",") ?? [], args.completedtasks?.split(",") ?? []);
+  const engine = new Engine(
+    tasks,
+    args.ignoretasks?.split(",") ?? [],
+    args.completedtasks?.split(",") ?? []
+  );
   try {
-    let actions_left = args.actions ?? Number.MAX_VALUE;
-    let state = new GameState();
-    if (actions_left < 0) {
-      // Update the strategy for the printout
-      summonStrategy.update(state);
-      keyStrategy.update();
-      pullStrategy.update();
-      for (const task of tasks) {
-        const priority = Prioritization.from(task, state);
-        const reason = priority.explain();
-        const why = reason === "" ? "Route" : reason;
-        debug(
-          `${task.name}: ${task.completed(state)
-            ? "Done"
-            : engine.available(task, state)
-              ? `Available [${priority.score()}: ${why}]`
-              : "Not Available"
-          }`,
-          task.completed(state) ? "blue" : engine.available(task, state) ? undefined : "red"
-        );
-      }
+    if (args.list) {
+      listTasks(engine);
+      return;
     }
 
-    // Do not bother to set properties if there are no tasks remaining
-    if (
-      tasks.find((task) => !task.completed(state) && (task.ready?.(state) ?? true)) !== undefined
-    ) {
-      setUniversalProperties(engine.propertyManager);
-      cliExecute("ccs loopgyou");
-    }
+    engine.run(args.actions);
 
-    while (myAdventures() > 0) {
-      // Note order matters for these strategy updates
-      summonStrategy.update(state); // Update summon plan with current state
-      keyStrategy.update(); // Update key plan with current state
-      pullStrategy.update(); // Update pull plan with current state
-
-      const next = getNextTask(engine, tasks, state);
-      if (next === undefined) break;
-      if (actions_left <= 0) {
-        debug(`Next task: ${next[0].name}`);
-        return;
-      } else {
-        actions_left -= 1;
-      }
-
-      if (next[2] !== undefined) state = engine.execute(next[0], next[1], state, next[2]);
-      else state = engine.execute(next[0], next[1], state);
-      // eslint-disable-next-line eqeqeq
-      if (myPath() != "Grey You") break; // Prism broken
-    }
-
-    const remaining_tasks = tasks.filter((task) => !task.completed(state));
+    const remaining_tasks = tasks.filter((task) => !task.completed());
     if (!runComplete()) {
+      if (args.actions) {
+        const next = engine.getNextTask();
+        if (next) {
+          debug(`Next task: ${next.name}`);
+          return;
+        }
+      }
+
       debug("Remaining tasks:", "red");
       for (const task of remaining_tasks) {
-        if (!task.completed(state)) debug(`${task.name}`, "red");
+        if (!task.completed()) debug(`${task.name}`, "red");
       }
       throw `Unable to find available task, but the run is not complete.`;
     }
@@ -207,7 +143,7 @@ export function main(command?: string): void {
     engine.propertyManager.resetAll();
   }
 
-  const state = new GameState();
+  const absorb_state = globalStateCache.absorb();
   if (step("questL13Final") > 11) {
     print("Grey you complete!", "purple");
   } else {
@@ -227,132 +163,77 @@ export function main(command?: string): void {
       )} since first run today started`,
       "purple"
     );
-  print(`   Pulls used: ${pullStrategy.pullsUsed()}`, "purple");
+  print(`   Pulls used: ${get("_roninStoragePulls").split(",").length}`, "purple");
   // eslint-disable-next-line eqeqeq
-  if (myPath() != "Grey You") {
-    print(
-      `   Monsters remaining: ${Array.from(state.absorb.remainingAbsorbs()).join(", ")}`,
-      "purple"
-    );
-    print(
-      `   Reprocess remaining: ${Array.from(state.absorb.remainingReprocess()).join(", ")}`,
-      "purple"
-    );
-  }
-}
-
-function getNextTask(
-  engine: Engine,
-  tasks: Task[],
-  state: GameState
-): [Task, Prioritization, WandererSource?] | undefined {
-  const available_tasks = tasks.filter((task) => engine.available(task, state));
-
-  // Teleportitis overrides all
-  if (have($effect`Teleportitis`)) {
-    const tele = teleportitisTask(engine, tasks, state);
-    if (tele.completed(state) && removeTeleportitis.ready()) {
-      return [removeTeleportitis, Prioritization.fixed(OverridePriority.Always)];
-    }
-    return [tele, Prioritization.fixed(OverridePriority.Always)];
-  }
-
-  // First, check for any heavily prioritized tasks
-  const priority = available_tasks.find(
-    (task) => task.priority?.() === OverridePriority.LastCopyableMonster
+  print(
+    `   Monsters remaining: ${Array.from(absorb_state.remainingAbsorbs()).join(", ")}`,
+    "purple"
   );
-  if (priority !== undefined) {
-    return [priority, Prioritization.fixed(OverridePriority.LastCopyableMonster)];
-  }
-
-  // If a wanderer is up try to place it in a useful location
-  const wanderer = wandererSources.find((source) => source.available() && source.chance() === 1);
-  const delay_burning = available_tasks.find(
-    (task) => engine.hasDelay(task) && Outfit.create(task, state).canEquip(wanderer?.equip)
+  print(
+    `   Reprocess remaining: ${Array.from(absorb_state.remainingReprocess()).join(", ")}`,
+    "purple"
   );
-  if (wanderer !== undefined && delay_burning !== undefined) {
-    return [delay_burning, Prioritization.fixed(OverridePriority.Wanderer), wanderer];
-  }
-
-  // Next, choose tasks by priorty, then by route.
-  const task_priorities = available_tasks.map(
-    (task) => [task, Prioritization.from(task, state)] as [Task, Prioritization]
-  );
-  const highest_priority = Math.max(...task_priorities.map((tp) => tp[1].score()));
-  const todo = task_priorities.find((tp) => tp[1].score() === highest_priority);
-  if (todo !== undefined) {
-    return todo;
-  }
-  // No next task
-  return undefined;
 }
 
 function runComplete(): boolean {
-  return step("questL13Final") > 11
+  return (
+    step("questL13Final") > 11 ||
     // eslint-disable-next-line eqeqeq
-    || myPath() != "Grey You"
-    || (args.delaytower && myTurncount() < 1000 && step("questL13Final") !== -1);
+    myPath() != "Grey You" ||
+    (args.delaytower && myTurncount() < 1000 && step("questL13Final") !== -1)
+  );
 }
 
-function setUniversalProperties(propertyManager: PropertiesManager) {
-  // Properties adapted from garbo
-  propertyManager.set({
-    logPreferenceChange: true,
-    logPreferenceChangeFilter: [
-      ...new Set([
-        ...get("logPreferenceChangeFilter").split(","),
-        "libram_savedMacro",
-        "maximizerMRUList",
-        "testudinalTeachings",
-        "_lastCombatStarted",
-      ]),
-    ]
-      .sort()
-      .filter((a) => a)
-      .join(","),
-    battleAction: "custom combat script",
-    autoSatisfyWithMall: true,
-    autoSatisfyWithNPCs: true,
-    autoSatisfyWithCoinmasters: true,
-    autoSatisfyWithStash: false,
-    dontStopForCounters: true,
-    maximizerFoldables: true,
-    hpAutoRecovery: "-0.05",
-    hpAutoRecoveryTarget: "0.0",
-    mpAutoRecovery: "-0.05",
-    mpAutoRecoveryTarget: "0.0",
-    afterAdventureScript: "",
-    betweenBattleScript: "",
-    choiceAdventureScript: "",
-    familiarScript: "",
-    currentMood: "apathetic",
-    autoTuxedo: true,
-    autoPinkyRing: true,
-    autoGarish: true,
-    allowNonMoodBurning: false,
-    allowSummonBurning: true,
-    libramSkillsSoftcore: "none",
-    louvreGoal: 7,
-    louvreDesiredGoal: 7,
-    requireBoxServants: false,
-    autoAbortThreshold: "-0.05",
-    mpAutoRecoveryItems: ensureRecovery("mpAutoRecoveryItems", ["black cherry soda", "doc galaktik's invigorating tonic"]),
-    hpAutoRecoveryItems: ensureRecovery("hpAutoRecoveryItems", ["scroll of drastic healing", "doc galaktik's homeopathic elixir"])
-  });
-  propertyManager.setChoices({
-    1106: 3, // Ghost Dog Chow
-    1107: 1, // tennis ball
-    1340: 3, // Is There A Doctor In The House?
-    1341: 1, // Cure her poison
-  });
-}
-
-function ensureRecovery(property: string, items: string[]): string {
-  const recovery_property = get(property).split(';');
-  for (const item of items) {
-    if (!recovery_property.includes(item)) {
-      recovery_property.push(item);
+function printVersionInfo(): void {
+  debug(
+    `Running loopgyou version [${lastCommitHash ?? "custom-built"}] in KoLmafia r${getRevision()}`
+  );
+  if (lastCommitHash !== undefined) {
+    if (svnExists(svn_name) && !svnAtHead(svn_name))
+      debug(
+        'A newer version of this script is available and can be obtained with "svn update".',
+        "red"
+      );
+    else if (args.version) {
+      debug("This script is up to date.", "red");
     }
   }
-  return recovery_property.join(";");
+}
+
+function breakPrism(into_class: number): void {
+  if (step("questL13Final") <= 11)
+    throw `You have not finished your Grey You run. Do not set this argument yet.`;
+  const absorb_state = globalStateCache.absorb();
+  print(
+    `   Monsters remaining: ${Array.from(absorb_state.remainingAbsorbs()).join(", ")}`,
+    "purple"
+  );
+  print(
+    `   Reprocess remaining: ${Array.from(absorb_state.remainingReprocess()).join(", ")}`,
+    "purple"
+  );
+  if (step("questL13Final") === 999) return;
+  visitUrl("place.php?whichplace=nstower&action=ns_11_prism");
+  visitUrl("main.php");
+  runChoice(into_class);
+  runChoice(into_class);
+}
+
+function listTasks(engine: Engine): void {
+  engine.updatePlan();
+  for (const task of engine.tasks) {
+    const priority = Prioritization.from(task);
+    const reason = priority.explain();
+    const why = reason === "" ? "Route" : reason;
+    debug(
+      `${task.name}: ${
+        task.completed()
+          ? "Done"
+          : engine.available(task)
+          ? `Available [${priority.score()}: ${why}]`
+          : "Not Available"
+      }`,
+      task.completed() ? "blue" : engine.available(task) ? undefined : "red"
+    );
+  }
 }

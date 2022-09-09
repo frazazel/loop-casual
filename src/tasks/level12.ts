@@ -16,9 +16,10 @@ import {
   Macro,
   set,
 } from "libram";
-import { Quest, step, Task } from "./structure";
-import { OverridePriority } from "../priority";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel, debug } from "../lib";
 import { yellowray } from "./yellowray";
 
@@ -50,10 +51,17 @@ const Flyers: Task[] = [
       cliExecute("refresh inv");
       if (have($item`rock band flyers`)) {
         debug("Mafia tracking was incorrect for rock band flyers; continuing to flyer...");
-        set("_loopgyou_flyeredML_buffer", get("_loopgyou_flyeredML_buffer", 0) + (get("flyeredML") - 9900));
+        set(
+          "_loopgyou_flyeredML_buffer",
+          get("_loopgyou_flyeredML_buffer", 0) + (get("flyeredML") - 9900)
+        );
         set("flyeredML", 9900);
       } else if (get("_loopgyou_flyeredML_buffer", 0) > 0) {
-        debug(`Mafia tracking was incorrect for rock band flyers; quest completed at ${get("flyeredML") + get("_loopgyou_flyeredML_buffer", 0)}`);
+        debug(
+          `Mafia tracking was incorrect for rock band flyers; quest completed at ${
+            get("flyeredML") + get("_loopgyou_flyeredML_buffer", 0)
+          }`
+        );
       }
     },
     freeaction: true,
@@ -75,11 +83,11 @@ const Lighthouse: Task[] = [
       !have($item`Powerful Glove`) ||
       !have($item`backup camera`),
     do: $location`Sonofa Beach`,
-    outfit: { equip: $items`cursed magnifying glass, Powerful Glove` },
+    outfit: { offhand: $item`cursed magnifying glass`, equip: $items`Powerful Glove` },
     combat: new CombatStrategy()
       .macro(
         new Macro().trySkill($skill`CHEAT CODE: Replace Enemy`),
-        ...$monsters`void guy, void slab, void spider`
+        $monsters`void guy, void slab, void spider`
       )
       .kill($monster`lobsterfrogman`),
     limit: { tries: 1 },
@@ -221,22 +229,26 @@ const Junkyard: Task[] = [
 ];
 
 const Orchard: Task[] = [
-  yellowray({
-    name: "Orchard Hatching",
-    after: ["Enrage"],
-    completed: () =>
-      have($item`filthworm hatchling scent gland`) ||
-      have($effect`Filthworm Larva Stench`) ||
-      have($item`filthworm drone scent gland`) ||
-      have($effect`Filthworm Drone Stench`) ||
-      have($item`filthworm royal guard scent gland`) ||
-      have($effect`Filthworm Guard Stench`) ||
-      have($item`heart of the filthworm queen`) ||
-      get("sidequestOrchardCompleted") !== "none",
-    do: $location`The Hatching Chamber`,
-    combat: new CombatStrategy().killItem(),
-    limit: { soft: 10 },
-  }, { modifier: "item" }, $monster`larval filthworm`),
+  yellowray(
+    {
+      name: "Orchard Hatching",
+      after: ["Enrage"],
+      completed: () =>
+        have($item`filthworm hatchling scent gland`) ||
+        have($effect`Filthworm Larva Stench`) ||
+        have($item`filthworm drone scent gland`) ||
+        have($effect`Filthworm Drone Stench`) ||
+        have($item`filthworm royal guard scent gland`) ||
+        have($effect`Filthworm Guard Stench`) ||
+        have($item`heart of the filthworm queen`) ||
+        get("sidequestOrchardCompleted") !== "none",
+      do: $location`The Hatching Chamber`,
+      combat: new CombatStrategy().killItem(),
+      limit: { soft: 10 },
+    },
+    { modifier: "item" },
+    $monster`larval filthworm`
+  ),
   yellowray(
     {
       name: "Orchard Feeding",
@@ -252,20 +264,27 @@ const Orchard: Task[] = [
       effects: $effects`Filthworm Larva Stench`,
       combat: new CombatStrategy().killItem(),
       limit: { soft: 10 },
-    }, { modifier: "item" }, $monster`filthworm drone`),
-  yellowray({
-    name: "Orchard Guard",
-    after: ["Orchard Feeding"],
-    completed: () =>
-      have($item`filthworm royal guard scent gland`) ||
-      have($effect`Filthworm Guard Stench`) ||
-      have($item`heart of the filthworm queen`) ||
-      get("sidequestOrchardCompleted") !== "none",
-    do: $location`The Royal Guard Chamber`,
-    effects: $effects`Filthworm Drone Stench`,
-    combat: new CombatStrategy().killItem(),
-    limit: { soft: 10 },
-  }, { modifier: "item" }, $monster`filthworm royal guard`),
+    },
+    { modifier: "item" },
+    $monster`filthworm drone`
+  ),
+  yellowray(
+    {
+      name: "Orchard Guard",
+      after: ["Orchard Feeding"],
+      completed: () =>
+        have($item`filthworm royal guard scent gland`) ||
+        have($effect`Filthworm Guard Stench`) ||
+        have($item`heart of the filthworm queen`) ||
+        get("sidequestOrchardCompleted") !== "none",
+      do: $location`The Royal Guard Chamber`,
+      effects: $effects`Filthworm Drone Stench`,
+      combat: new CombatStrategy().killItem(),
+      limit: { soft: 10 },
+    },
+    { modifier: "item" },
+    $monster`filthworm royal guard`
+  ),
   {
     name: "Orchard Queen",
     after: ["Orchard Guard"],
@@ -273,8 +292,9 @@ const Orchard: Task[] = [
       have($item`heart of the filthworm queen`) || get("sidequestOrchardCompleted") !== "none",
     do: $location`The Filthworm Queen's Chamber`,
     effects: $effects`Filthworm Guard Stench`,
-    combat: new CombatStrategy(true).kill(),
+    combat: new CombatStrategy().kill(),
     limit: { tries: 2 }, // allow wanderer
+    boss: true,
   },
   {
     name: "Orchard Finish",
@@ -296,7 +316,8 @@ const Nuns: Task[] = [
     completed: () => get("sidequestNunsCompleted") !== "none",
     priority: () => (have($effect`Winklered`) ? OverridePriority.Effect : OverridePriority.None),
     prepare: () => {
-      if (have($item`SongBoom™ BoomBox`) && get("boomBoxSong") !== "Total Eclipse of Your Meat") cliExecute("boombox meat");
+      if (have($item`SongBoom™ BoomBox`) && get("boomBoxSong") !== "Total Eclipse of Your Meat")
+        cliExecute("boombox meat");
       if (!get("concertVisited")) ensureEffect($effect`Winklered`);
     },
     do: $location`The Themthar Hills`,
@@ -311,11 +332,14 @@ const Nuns: Task[] = [
       return {
         modifier: "meat",
         equip: $items`beer helmet, distressed denim pants, bejeweled pledge pin, amulet coin`, // Use amulet coin (if we have) to avoid using orb
-      }
+      };
     },
     freecombat: true, // Do not equip cmg or carn plant
-    combat: new CombatStrategy(true).macro(new Macro().trySkill($skill`Bowl Straight Up`).trySkill($skill`Sing Along`)).kill(),
+    combat: new CombatStrategy()
+      .macro(new Macro().trySkill($skill`Bowl Straight Up`).trySkill($skill`Sing Along`))
+      .kill(),
     limit: { soft: 25 },
+    boss: true,
   },
 ];
 
@@ -335,27 +359,34 @@ export const WarQuest: Quest = {
       {
         name: "Outfit Hippy",
         after: ["Misc/Unlock Island"],
-        completed: () =>
-          (have($item`filthy corduroys`) && have($item`filthy knitted dread sack`)),
+        completed: () => have($item`filthy corduroys`) && have($item`filthy knitted dread sack`),
         do: $location`Hippy Camp`,
         limit: { soft: 10 },
         outfit: { modifier: "+combat" },
-        choices: { 136: () => have($item`filthy corduroys`) ? 2 : 1, 137: () => have($item`filthy corduroys`) ? 1 : 2 },
+        choices: {
+          136: () => (have($item`filthy corduroys`) ? 2 : 1),
+          137: () => (have($item`filthy corduroys`) ? 1 : 2),
+        },
         combat: new CombatStrategy().killItem(),
-      }, { modifier: "item" }),
-    yellowray({
-      name: "Outfit Frat",
-      after: ["Start", "Outfit Hippy"],
-      completed: () =>
-      (have($item`beer helmet`) &&
-        have($item`distressed denim pants`) &&
-        have($item`bejeweled pledge pin`)),
-      do: $location`Frat House`,
-      limit: { soft: 10 },
-      outfit: { equip: $items`filthy corduroys, filthy knitted dread sack`, modifier: "+combat" },
-      choices: { 142: 3, 143: 3, 144: 3, 145: 1, 146: 3, 1433: 3 },
-      combat: new CombatStrategy().killItem(),
-    }, { equip: $items`filthy corduroys, filthy knitted dread sack`, modifier: "item" }),
+      },
+      { modifier: "item" }
+    ),
+    yellowray(
+      {
+        name: "Outfit Frat",
+        after: ["Start", "Outfit Hippy"],
+        completed: () =>
+          have($item`beer helmet`) &&
+          have($item`distressed denim pants`) &&
+          have($item`bejeweled pledge pin`),
+        do: $location`Frat House`,
+        limit: { soft: 10 },
+        outfit: { equip: $items`filthy corduroys, filthy knitted dread sack`, modifier: "+combat" },
+        choices: { 142: 3, 143: 3, 144: 3, 145: 1, 146: 3, 1433: 3 },
+        combat: new CombatStrategy().killItem(),
+      },
+      { equip: $items`filthy corduroys, filthy knitted dread sack`, modifier: "item" }
+    ),
     {
       name: "Enrage",
       after: ["Start", "Misc/Unlock Island", "Outfit Frat"],
@@ -427,8 +458,9 @@ export const WarQuest: Quest = {
         visitUrl("bigisland.php?place=camp&whichcamp=1&confirm7=1");
         visitUrl("bigisland.php?action=bossfight&pwd");
       },
-      combat: new CombatStrategy(true).killHard(),
+      combat: new CombatStrategy().killHard(),
       limit: { tries: 1 },
+      boss: true,
     },
   ],
 };

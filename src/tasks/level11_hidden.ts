@@ -24,9 +24,10 @@ import {
   have,
   Macro,
 } from "libram";
-import { Quest, step, Task } from "./structure";
-import { OverridePriority } from "../priority";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
+import { CombatStrategy } from "../engine/combat";
 
 function manualChoice(whichchoice: number, option: number) {
   return visitUrl(`choice.php?whichchoice=${whichchoice}&pwd=${myHash()}&option=${option}`);
@@ -79,7 +80,8 @@ const Temple: Task[] = [
     do: () => use($item`Spooky Temple map`),
     limit: { tries: 1 },
     freeaction: true,
-  }, {
+  },
+  {
     name: "Temple Wool",
     after: ["Open Temple"],
     completed: () =>
@@ -92,7 +94,11 @@ const Temple: Task[] = [
       return OverridePriority.BadGoose;
     },
     prepare: () => {
-      if (itemAmount($item`11-leaf clover`) > 1 && !have($effect`Lucky!`) && !have($item`industrial fire extinguisher`))
+      if (
+        itemAmount($item`11-leaf clover`) > 1 &&
+        !have($effect`Lucky!`) &&
+        !have($item`industrial fire extinguisher`)
+      )
         use($item`11-leaf clover`);
     },
     do: $location`The Hidden Temple`,
@@ -107,12 +113,9 @@ const Temple: Task[] = [
           .trySkill($skill`Fire Extinguisher: Polar Vortex`)
           .trySkill($skill`Fire Extinguisher: Polar Vortex`),
         $monster`baa-relief sheep`
-      ).macro(
-        new Macro()
-          .trySkill($skill`Emit Matter Duplicating Drones`),
-        $monster`Baa'baa'bu'ran`
       )
-      .killItem($monster`baa-relief sheep`, $monster`Baa'baa'bu'ran`),
+      .macro(new Macro().trySkill($skill`Emit Matter Duplicating Drones`), $monster`Baa'baa'bu'ran`)
+      .killItem([$monster`baa-relief sheep`, $monster`Baa'baa'bu'ran`]),
     choices: { 579: 2, 580: 1, 581: 3, 582: 1 },
     limit: { soft: 20 },
   },
@@ -162,7 +165,7 @@ const Apartment: Task[] = [
   },
   {
     name: "Apartment Files", // Get the last McClusky files here if needed, as a backup plan
-    after: ["Office Files", "Banish Janitors"],
+    after: ["Open Apartment", "Office Files", "Banish Janitors"],
     priority: () =>
       have($effect`Once-Cursed`) || have($effect`Twice-Cursed`) || have($effect`Thrice-Cursed`)
         ? OverridePriority.Effect
@@ -175,7 +178,7 @@ const Apartment: Task[] = [
     combat: new CombatStrategy()
       .killHard($monster`ancient protector spirit (The Hidden Apartment Building)`)
       .kill($monster`pygmy witch accountant`)
-      .banish(...$monsters`pygmy janitor, pygmy witch lawyer`)
+      .banish($monsters`pygmy janitor, pygmy witch lawyer`)
       .ignoreNoBanish($monster`pygmy shaman`)
       .ignore(),
     limit: { tries: 9 },
@@ -192,7 +195,7 @@ const Apartment: Task[] = [
     do: $location`The Hidden Apartment Building`,
     combat: new CombatStrategy()
       .killHard($monster`ancient protector spirit (The Hidden Apartment Building)`)
-      .banish(...$monsters`pygmy janitor, pygmy witch lawyer, pygmy witch accountant`)
+      .banish($monsters`pygmy janitor, pygmy witch lawyer, pygmy witch accountant`)
       .ignoreNoBanish($monster`pygmy shaman`)
       .ignore(),
     orbtargets: () => {
@@ -242,7 +245,7 @@ const Office: Task[] = [
     do: $location`The Hidden Office Building`,
     combat: new CombatStrategy()
       .kill($monster`pygmy witch accountant`)
-      .banish(...$monsters`pygmy janitor, pygmy headhunter, pygmy witch lawyer`),
+      .banish($monsters`pygmy janitor, pygmy headhunter, pygmy witch lawyer`),
     choices: { 786: 2 },
     limit: { tries: 10 },
   },
@@ -303,7 +306,7 @@ const Hospital: Task[] = [
     combat: new CombatStrategy()
       .killHard($monster`ancient protector spirit (The Hidden Hospital)`)
       .kill($monster`pygmy witch surgeon`)
-      .banish(...$monsters`pygmy orderlies, pygmy janitor, pygmy witch nurse`),
+      .banish($monsters`pygmy orderlies, pygmy janitor, pygmy witch nurse`),
     outfit: {
       equip: $items`half-size scalpel, head mirror, surgical mask, bloodied surgical dungarees`,
     },
@@ -340,7 +343,9 @@ const Bowling: Task[] = [
     after: ["Open Bowling"],
     ready: () => myMeat() >= 500,
     acquire: [{ item: $item`Bowl of Scorpions`, optional: true }],
-    completed: () => (have($skill`System Sweep`) || get("relocatePygmyJanitor") === myAscensions()) && have($skill`Double Nanovision`),
+    completed: () =>
+      (have($skill`System Sweep`) || get("relocatePygmyJanitor") === myAscensions()) &&
+      have($skill`Double Nanovision`),
     prepare: () => {
       // No need for more bowling progress after we beat the boss
       if (get("hiddenBowlingAlleyProgress") >= 7 && have($item`bowling ball`))
@@ -356,10 +361,11 @@ const Bowling: Task[] = [
     combat: new CombatStrategy()
       .killHard($monster`ancient protector spirit (The Hidden Bowling Alley)`)
       .killItem($monster`pygmy bowler`)
-      .autoattack(new Macro().trySkill($skill`Infinite Loop`), $monster`drunk pygmy`)
-      .banish(...$monsters`pygmy orderlies`),
+      // .autoattack(new Macro().trySkill($skill`Infinite Loop`), $monster`drunk pygmy`)
+      .banish($monster`pygmy orderlies`),
     outfit: {
-      modifier: "item", avoid: $items`broken champagne bottle`,
+      modifier: "item",
+      avoid: $items`broken champagne bottle`,
     },
     choices: { 788: 1 },
     limit: { soft: 15 },
@@ -374,10 +380,11 @@ const Bowling: Task[] = [
     combat: new CombatStrategy()
       .killHard($monster`ancient protector spirit (The Hidden Bowling Alley)`)
       .killItem($monster`pygmy bowler`)
-      .autoattack(new Macro().trySkill($skill`Infinite Loop`), $monster`drunk pygmy`)
-      .banish(...$monsters`pygmy janitor, pygmy orderlies`),
+      // .autoattack(new Macro().trySkill($skill`Infinite Loop`), $monster`drunk pygmy`)
+      .banish($monsters`pygmy janitor, pygmy orderlies`),
     outfit: {
-      modifier: "item", avoid: $items`broken champagne bottle`,
+      modifier: "item",
+      avoid: $items`broken champagne bottle`,
     },
     choices: { 788: 1 },
     limit: { soft: 25 },
@@ -428,11 +435,11 @@ export const HiddenQuest: Quest = {
         equip: $items`antique machete`,
       },
       choices: { 791: 1 },
-      combat: new CombatStrategy(true)
-        .kill(...$monsters`dense liana, Protector Spectre`)
-        .autoattack(new Macro().trySkill($skill`Infinite Loop`), $monster`dense liana`),
+      combat: new CombatStrategy().kill($monsters`dense liana, Protector Spectre`),
+      // .autoattack(new Macro().trySkill($skill`Infinite Loop`), $monster`dense liana`),
       limit: { tries: 4 },
       acquire: [{ item: $item`antique machete` }],
+      boss: true,
     },
   ],
 };

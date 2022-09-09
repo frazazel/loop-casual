@@ -1,4 +1,4 @@
-import { CombatStrategy } from "../combat";
+import { CombatStrategy } from "../engine/combat";
 import {
   adv1,
   canadiaAvailable,
@@ -44,13 +44,14 @@ import {
   set,
   uneffect,
 } from "libram";
-import { OutfitSpec, Quest, step, Task } from "./structure";
-import { OverridePriority } from "../priority";
-import { Engine, wanderingNCs } from "../engine";
+import { Quest, Task } from "../engine/task";
+import { OutfitSpec, step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
+import { Engine, wanderingNCs } from "../engine/engine";
 import { Keys, keyStrategy } from "./keys";
 import { atLevel, debug } from "../lib";
 import { args } from "../main";
-import { GameState } from "../state";
+import { globalStateCache } from "../engine/state";
 import { coldRes } from "./absorb";
 
 export const MiscQuest: Quest = {
@@ -180,7 +181,7 @@ export const MiscQuest: Quest = {
 
         const monsterVote =
           votingMonsterPriority.indexOf(get("_voteMonster1")) <
-            votingMonsterPriority.indexOf(get("_voteMonster2"))
+          votingMonsterPriority.indexOf(get("_voteMonster2"))
             ? 1
             : 2;
 
@@ -188,22 +189,22 @@ export const MiscQuest: Quest = {
           [
             0,
             initPriority.get(get("_voteLocal1")) ||
-            (get("_voteLocal1").indexOf("-") === -1 ? 1 : -1),
+              (get("_voteLocal1").indexOf("-") === -1 ? 1 : -1),
           ],
           [
             1,
             initPriority.get(get("_voteLocal2")) ||
-            (get("_voteLocal2").indexOf("-") === -1 ? 1 : -1),
+              (get("_voteLocal2").indexOf("-") === -1 ? 1 : -1),
           ],
           [
             2,
             initPriority.get(get("_voteLocal3")) ||
-            (get("_voteLocal3").indexOf("-") === -1 ? 1 : -1),
+              (get("_voteLocal3").indexOf("-") === -1 ? 1 : -1),
           ],
           [
             3,
             initPriority.get(get("_voteLocal4")) ||
-            (get("_voteLocal4").indexOf("-") === -1 ? 1 : -1),
+              (get("_voteLocal4").indexOf("-") === -1 ? 1 : -1),
           ],
         ];
 
@@ -288,7 +289,8 @@ export const MiscQuest: Quest = {
             return;
           case $location`The Icy Peak`:
             if (numericModifier("cold resistance") < 5) ensureEffect($effect`Red Door Syndrome`);
-            if (numericModifier("cold resistance") < 5) throw `Unable to ensure cold res for The Icy Peak`;
+            if (numericModifier("cold resistance") < 5)
+              throw `Unable to ensure cold res for The Icy Peak`;
             return;
           default:
             return;
@@ -302,9 +304,13 @@ export const MiscQuest: Quest = {
       },
       outfit: (): OutfitSpec => {
         if (get("ghostLocation") === $location`Inside the Palindome`)
-          return { equip: $items`Talisman o' Namsilat, protonic accelerator pack`, modifier: "DA, DR" };
+          return {
+            equip: $items`Talisman o' Namsilat, protonic accelerator pack`,
+            modifier: "DA, DR",
+          };
         if (get("ghostLocation") === $location`The Icy Peak`) {
-          if (coldRes(true, false) >= 5) return { equip: $items`protonic accelerator pack`, modifier: "1000 cold res, DA, DR" };
+          if (coldRes(true, false) >= 5)
+            return { equip: $items`protonic accelerator pack`, modifier: "1000 cold res, DA, DR" };
           else return { modifier: "1000 cold res, DA, DR" }; // not enough cold res without back
         }
         return { equip: $items`protonic accelerator pack`, modifier: "DA, DR" };
@@ -350,7 +356,10 @@ export const MiscQuest: Quest = {
       name: "Acquire Firework Hat",
       after: [],
       priority: () => OverridePriority.Free,
-      completed: () => have($item`sombrero-mounted sparkler`) || get("_fireworksShopHatBought") || !have($item`Clan VIP Lounge key`),
+      completed: () =>
+        have($item`sombrero-mounted sparkler`) ||
+        get("_fireworksShopHatBought") ||
+        !have($item`Clan VIP Lounge key`),
       do: () => {
         visitUrl("clan_viplounge.php");
         visitUrl("clan_viplounge.php?action=fwshop&whichfloor=2");
@@ -413,7 +422,7 @@ export const MiscQuest: Quest = {
       name: "Dog Chow",
       after: [],
       ready: () => have($item`Ghost Dog Chow`) && familiarWeight($familiar`Grey Goose`) < 6,
-      completed: (state: GameState) => state.absorb.remainingReprocess().length === 0,
+      completed: () => globalStateCache.absorb().remainingReprocess().length === 0,
       do: () => {
         use($item`Ghost Dog Chow`);
         if (familiarWeight($familiar`Grey Goose`) < 6 && have($item`Ghost Dog Chow`))
@@ -427,7 +436,7 @@ export const MiscQuest: Quest = {
       name: "Cake-Shaped Arena",
       after: [],
       ready: () => familiarWeight($familiar`Grey Goose`) < 6 && myMeat() >= 100,
-      completed: (state: GameState) => state.absorb.remainingReprocess().length === 0,
+      completed: () => globalStateCache.absorb().remainingReprocess().length === 0,
       do: arenaFight,
       outfit: { familiar: $familiar`Grey Goose`, modifier: "50 familiar exp, familiar weight" },
       freeaction: true,
@@ -466,9 +475,9 @@ export const MiscQuest: Quest = {
       priority: () => OverridePriority.Free,
       ready: () => (get("currentNunneryMeat") === 0 || get("currentNunneryMeat") === 100000),
       completed: () =>
-        !have($item`SongBoom™ BoomBox`)
-        || get("boomBoxSong") === "Food Vibrations"
-        || get("_boomBoxSongsLeft") === 0,
+        !have($item`SongBoom™ BoomBox`) ||
+        get("boomBoxSong") === "Food Vibrations" ||
+        get("_boomBoxSongsLeft") === 0,
       do: () => cliExecute("boombox food"),
       freeaction: true,
       limit: { tries: 2 },
@@ -566,6 +575,7 @@ export const MiscQuest: Quest = {
       },
       choices: { 1280: 1 },
       limit: { tries: 1 },
+      freeaction: true,
     },
     {
       name: "Mumming Trunk",
@@ -574,8 +584,9 @@ export const MiscQuest: Quest = {
       completed: () => !have($item`mumming trunk`) || get("_mummeryUses").includes("2,"),
       do: () => cliExecute("mummery mp"),
       outfit: { familiar: $familiar`Grey Goose` },
-      limit: { tries: 1 }
-    }
+      limit: { tries: 1 },
+      freeaction: true,
+    },
   ],
 };
 
@@ -632,7 +643,7 @@ export const WandQuest: Quest = {
       outfit: { modifier: "-combat, init", familiar: $familiar`Grey Goose` },
       combat: new CombatStrategy()
         .banish($monster`Quantum Mechanic`)
-        .kill(...$monsters`mimic, The Master Of Thieves`), // Avoid getting more teleportitis
+        .kill($monsters`mimic, The Master Of Thieves`), // Avoid getting more teleportitis
       choices: { 25: 2 },
       limit: { soft: 20 },
     },
@@ -654,15 +665,15 @@ export const WandQuest: Quest = {
   ],
 };
 
-export function teleportitisTask(engine: Engine, tasks: Task[], state: GameState): Task {
+export function teleportitisTask(engine: Engine, tasks: Task[]): Task {
   // Combine the choice selections from all tasks
   // Where multiple tasks make different choices at the same choice, prefer:
   //  * Earlier tasks to later tasks
   //  * Uncompleted tasks to completed tasks
   const choices: Task["choices"] = { 3: 3 }; // The goal choice
 
-  const done_tasks = tasks.filter((task) => task.completed(state));
-  const left_tasks = tasks.filter((task) => !task.completed(state));
+  const done_tasks = tasks.filter((task) => task.completed());
+  const left_tasks = tasks.filter((task) => !task.completed());
   for (const task of [...left_tasks, ...done_tasks].reverse()) {
     for (const choice_id_str in task.choices) {
       const choice_id = parseInt(choice_id_str);
@@ -691,7 +702,8 @@ export function teleportitisTask(engine: Engine, tasks: Task[], state: GameState
     post: () => {
       // Some tracking is broken when we encounter it with teleportitis
       if (get("lastEncounter") === "Having a Ball in the Ballroom") set("questM21Dance", "step4");
-      if (get("lastEncounter") === "Too Much Humanity" && step("questL11Ron") < 1) set("questL11Ron", "step1");
+      if (get("lastEncounter") === "Too Much Humanity" && step("questL11Ron") < 1)
+        set("questL11Ron", "step1");
     },
     outfit: { equip: $items`antique machete` },
     choices: choices,

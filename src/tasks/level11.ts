@@ -23,12 +23,13 @@ import {
   Macro,
   uneffect,
 } from "libram";
-import { OutfitSpec, Quest, step, Task } from "./structure";
-import { OverridePriority } from "../priority";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { OutfitSpec, step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel, debug } from "../lib";
 import { councilSafe } from "./level12";
-import { GameState } from "../state";
+import { globalStateCache } from "../engine/state";
 import { towerSkip } from "./level13";
 
 const Diary: Task[] = [
@@ -43,16 +44,17 @@ const Diary: Task[] = [
     post: () => {
       if (have($effect`Really Quite Poisoned`)) uneffect($effect`Really Quite Poisoned`);
     },
-    outfit: (state: GameState) => {
+    outfit: () => {
       if (have($item`reassembled blackbird`)) {
         return {
           equip: $items`blackberry galoshes`,
           modifier: "50 combat 5max, -1ML",
         };
       } else if (
-        state.absorb.isReprocessTarget($monster`black magic woman`) &&
+        globalStateCache.absorb().isReprocessTarget($monster`black magic woman`) &&
         familiarWeight($familiar`Grey Goose`) >= 6 &&
-        state.orb.prediction($location`The Black Forest`) === $monster`black magic woman`
+        globalStateCache.orb().prediction($location`The Black Forest`) ===
+          $monster`black magic woman`
       ) {
         // Swoop in for a single adventure to reprocess the black magic woman
         return {
@@ -65,7 +67,7 @@ const Diary: Task[] = [
           equip: $items`blackberry galoshes`,
           familiar: $familiar`Reassembled Blackbird`,
           modifier: "50 combat 5max, item, -1ML",
-          avoid: $items`broken champagne bottle`
+          avoid: $items`broken champagne bottle`,
         };
       }
     },
@@ -82,7 +84,7 @@ const Diary: Task[] = [
     },
     combat: new CombatStrategy()
       .ignore($monster`blackberry bush`)
-      .killItem(...$monsters`black adder, black panther`)
+      .killItem($monsters`black adder, black panther`)
       .kill(),
     orbtargets: () => undefined, // do not dodge anything with orb
     limit: { soft: 15 },
@@ -157,8 +159,8 @@ const Desert: Task[] = [
       get("desertExploration") >= 100 ||
       have($item`drum machine`) ||
       (get("gnasirProgress") & 16) !== 0,
-    prepare: (state: GameState) => {
-      if (state.absorb.hasReprocessTargets($location`The Oasis`)) {
+    prepare: () => {
+      if (globalStateCache.absorb().hasReprocessTargets($location`The Oasis`)) {
         // Use ghost dog chow to prepare to reprocess Blur without needing arena adventures
         while (familiarWeight($familiar`Grey Goose`) < 6 && have($item`Ghost Dog Chow`))
           use($item`Ghost Dog Chow`);
@@ -199,7 +201,7 @@ const Desert: Task[] = [
       have($effect`Ultrahydrated`) ? OverridePriority.Effect : OverridePriority.None,
     completed: () => get("desertExploration") >= 100,
     do: $location`The Arid, Extra-Dry Desert`,
-    outfit: (state: GameState): OutfitSpec => {
+    outfit: (): OutfitSpec => {
       if (
         have($item`industrial fire extinguisher`) &&
         get("_fireExtinguisherCharge") >= 20 &&
@@ -211,12 +213,12 @@ const Desert: Task[] = [
           familiar: $familiar`Melodramedary`,
         };
       else if (
-        state.absorb.isReprocessTarget($monster`swarm of fire ants`) &&
+        globalStateCache.absorb().isReprocessTarget($monster`swarm of fire ants`) &&
         familiarWeight($familiar`Grey Goose`) >= 6 &&
         have($item`miniature crystal ball`)
       ) {
         if (
-          state.orb.prediction($location`The Arid, Extra-Dry Desert`) ===
+          globalStateCache.orb().prediction($location`The Arid, Extra-Dry Desert`) ===
           $monster`swarm of fire ants`
         ) {
           // Swoop in for a single adventure to reprocess the fire ants
@@ -323,8 +325,8 @@ const Pyramid: Task[] = [
     limit: { soft: 25 },
     combat: new CombatStrategy()
       .macro(new Macro().tryItem($item`tangle of rat tails`), $monster`tomb rat`)
-      .killItem($monster`tomb rat`, $monster`tomb rat king`)
-      .banish($monster`tomb asp`, $monster`tomb servant`),
+      .killItem([$monster`tomb rat`, $monster`tomb rat king`])
+      .banish([$monster`tomb asp`, $monster`tomb servant`]),
     outfit: {
       modifier: "item",
     },
@@ -358,10 +360,11 @@ const Pyramid: Task[] = [
     completed: () => step("questL11Pyramid") === 999,
     do: () => visitUrl("place.php?whichplace=pyramid&action=pyramid_state1a"),
     outfit: () => {
-      if (!have($item`Pick-O-Matic lockpicks`) && !towerSkip()) return { familiar: $familiar`Gelatinous Cubeling` }; // Ensure we get equipment
+      if (!have($item`Pick-O-Matic lockpicks`) && !towerSkip())
+        return { familiar: $familiar`Gelatinous Cubeling` }; // Ensure we get equipment
       return {};
     },
-    combat: new CombatStrategy(true)
+    combat: new CombatStrategy()
       .macro(
         new Macro()
           .while_("!mpbelow 20", new Macro().trySkill($skill`Infinite Loop`))
@@ -370,6 +373,7 @@ const Pyramid: Task[] = [
       )
       .kill(),
     limit: { tries: 1 },
+    boss: true,
   },
 ];
 

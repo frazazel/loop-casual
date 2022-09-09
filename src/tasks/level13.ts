@@ -27,10 +27,11 @@ import {
   have,
   Macro,
 } from "libram";
-import { CombatStrategy } from "../combat";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
 import { args } from "../main";
-import { Quest, step, Task } from "./structure";
+import { Quest, Task } from "../engine/task";
+import { step } from "grimoire-kolmafia";
 
 const Challenges: Task[] = [
   {
@@ -167,16 +168,18 @@ const ChallengeBosses: Task[] = [
     after: ["Speed Challenge"],
     completed: () => get("nsContestants1") === 0,
     do: $location`Fastest Adventurer Contest`,
-    combat: new CombatStrategy(true).killHard(),
+    combat: new CombatStrategy().killHard(),
     limit: { tries: 5 },
+    boss: true,
   },
   {
     name: "Stat Boss",
     after: ["Muscle Challenge", "Moxie Challenge", "Mysticality Challenge"],
     completed: () => get("nsContestants2") === 0,
     do: $location`A Crowd of (Stat) Adventurers`,
-    combat: new CombatStrategy(true).killHard(),
+    combat: new CombatStrategy().killHard(),
     limit: { tries: 1 },
+    boss: true,
   },
   {
     name: "Element Boss",
@@ -189,8 +192,9 @@ const ChallengeBosses: Task[] = [
     ],
     completed: () => get("nsContestants3") === 0,
     do: $location`A Crowd of (Element) Adventurers`,
-    combat: new CombatStrategy(true).killHard(),
+    combat: new CombatStrategy().killHard(),
     limit: { tries: 10 },
+    boss: true,
   },
 ];
 
@@ -271,7 +275,8 @@ const wand: Task[] = [
     name: "Wand W",
     after: ["Wall of Bones"],
     ready: () => !have($item`11-leaf clover`),
-    completed: () => have($item`ruby W`) || have($item`WA`) || have($item`Wand of Nagamar`) || towerSkip(),
+    completed: () =>
+      have($item`ruby W`) || have($item`WA`) || have($item`Wand of Nagamar`) || towerSkip(),
     do: $location`Pandamonium Slums`,
     outfit: { modifier: "item" },
     combat: new CombatStrategy().killItem($monster`W imp`),
@@ -281,7 +286,8 @@ const wand: Task[] = [
     name: "Wand A",
     after: ["Wall of Bones"],
     ready: () => !have($item`11-leaf clover`),
-    completed: () => have($item`metallic A`) || have($item`WA`) || have($item`Wand of Nagamar`) || towerSkip(),
+    completed: () =>
+      have($item`metallic A`) || have($item`WA`) || have($item`Wand of Nagamar`) || towerSkip(),
     do: $location`The Penultimate Fantasy Airship`,
     outfit: { modifier: "item" },
     combat: new CombatStrategy().killItem($monster`MagiMechTech MechaMech`),
@@ -291,7 +297,8 @@ const wand: Task[] = [
     name: "Wand N",
     after: ["Wall of Bones"],
     ready: () => !have($item`11-leaf clover`),
-    completed: () => have($item`lowercase N`) || have($item`ND`) || have($item`Wand of Nagamar`) || towerSkip(),
+    completed: () =>
+      have($item`lowercase N`) || have($item`ND`) || have($item`Wand of Nagamar`) || towerSkip(),
     do: $location`The Valley of Rof L'm Fao`,
     outfit: { modifier: "item" },
     combat: new CombatStrategy().killItem($monster`XXX pr0n`),
@@ -301,7 +308,8 @@ const wand: Task[] = [
     name: "Wand D",
     after: ["Wall of Bones"],
     ready: () => !have($item`11-leaf clover`),
-    completed: () => have($item`heavy D`) || have($item`ND`) || have($item`Wand of Nagamar`) || towerSkip(),
+    completed: () =>
+      have($item`heavy D`) || have($item`ND`) || have($item`Wand of Nagamar`) || towerSkip(),
     do: $location`The Castle in the Clouds in the Sky (Basement)`,
     outfit: { modifier: "item" },
     combat: new CombatStrategy().killItem($monster`Alphabet Giant`),
@@ -314,7 +322,8 @@ const wand: Task[] = [
     completed: () =>
       have($item`Wand of Nagamar`) ||
       ((have($item`WA`) || (have($item`ruby W`) && have($item`metallic A`))) &&
-        (have($item`ND`) || (have($item`lowercase N`) && have($item`heavy D`)))) || towerSkip(),
+        (have($item`ND`) || (have($item`lowercase N`) && have($item`heavy D`)))) ||
+      towerSkip(),
     prepare: () => use($item`11-leaf clover`),
     do: $location`The Castle in the Clouds in the Sky (Basement)`,
     limit: { tries: 1 },
@@ -421,12 +430,13 @@ export const TowerQuest: Quest = {
       completed: () => step("questL13Final") > 6,
       do: $location`Tower Level 1`,
       outfit: { familiar: $familiar`Shorter-Order Cook`, equip: $items`hot plate` },
-      combat: new CombatStrategy(true).macro(
+      combat: new CombatStrategy().macro(
         new Macro()
           .tryItem($item`beehive`)
           .skill($skill`Grey Noise`)
           .repeat()
       ),
+      boss: true,
       limit: { tries: 1 },
     },
     {
@@ -438,7 +448,8 @@ export const TowerQuest: Quest = {
       completed: () => step("questL13Final") > 7,
       do: $location`Tower Level 2`,
       outfit: { modifier: "meat", equip: $items`amulet coin` },
-      combat: new CombatStrategy(true).killHard(),
+      combat: new CombatStrategy().killHard(),
+      boss: true,
       limit: { tries: 2 },
     },
     {
@@ -453,23 +464,27 @@ export const TowerQuest: Quest = {
           if (myBuffedstat($stat`moxie`) < 1000) ensureEffect($effect`Gr8ness`);
           fillHp();
         } else if (have($item`Drunkula's bell`)) {
-          if (myBuffedstat($stat`mysticality`) < 2700) ensureEffect($effect`On the Shoulders of Giants`);
+          if (myBuffedstat($stat`mysticality`) < 2700)
+            ensureEffect($effect`On the Shoulders of Giants`);
           if (myBuffedstat($stat`mysticality`) < 2700) ensureEffect($effect`Mystically Oiled`);
           if (myBuffedstat($stat`mysticality`) < 2700) ensureEffect($effect`Gr8ness`);
         }
       },
       do: $location`Tower Level 3`,
       outfit: () => {
-        if (have($item`Great Wolf's rocket launcher`)) return { equip: $items`Great Wolf's rocket launcher`, modifier: "moxie" };
+        if (have($item`Great Wolf's rocket launcher`))
+          return { equip: $items`Great Wolf's rocket launcher`, modifier: "moxie" };
         if (have($item`Drunkula's bell`)) return { modifier: "myst" };
         return {};
       },
-      combat: new CombatStrategy(true).macro(() => {
+      combat: new CombatStrategy().macro(() => {
         if (have($item`electric boning knife`)) return Macro.item($item`electric boning knife`);
-        if (haveEquipped($item`Great Wolf's rocket launcher`)) return Macro.skill($skill`Fire Rocket`);
+        if (haveEquipped($item`Great Wolf's rocket launcher`))
+          return Macro.skill($skill`Fire Rocket`);
         if (have($item`Drunkula's bell`)) return Macro.item($item`Drunkula's bell`);
         throw `Unable to find way to kill Wall of Bones`;
       }),
+      boss: true,
       limit: { tries: 1 },
     },
     ...wand,
@@ -508,7 +523,8 @@ export const TowerQuest: Quest = {
           };
         else return { modifier: "HP", avoid: $items`extra-wide head candle` };
       },
-      combat: new CombatStrategy(true).macro(new Macro().item($item`gauze garter`).repeat()),
+      combat: new CombatStrategy().macro(new Macro().item($item`gauze garter`).repeat()),
+      boss: true,
       limit: { tries: 1 },
     },
     {
@@ -517,7 +533,8 @@ export const TowerQuest: Quest = {
       completed: () => step("questL13Final") > 11,
       do: $location`The Naughty Sorceress' Chamber`,
       outfit: { modifier: "muscle" },
-      combat: new CombatStrategy(true).kill(),
+      combat: new CombatStrategy().kill(),
+      boss: true,
       limit: { tries: 1 },
     },
   ],

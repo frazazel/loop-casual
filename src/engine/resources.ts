@@ -9,21 +9,19 @@ import {
   have,
   Macro,
 } from "libram";
-import { MonsterStrategy } from "./combat";
-import { atLevel } from "./lib";
-import { Task } from "./tasks/structure";
+import { CombatResource as BaseCombatResource, OutfitSpec } from "grimoire-kolmafia";
+import { atLevel } from "../lib";
+import { Task } from "./task";
 
 export interface Resource {
   name: string;
   available: () => boolean;
   prepare?: () => void;
-  equip?: Item | Familiar | (Item | Familiar)[];
+  equip?: Item | Familiar | Item[] | OutfitSpec;
   chance?: () => number;
 }
 
-export interface CombatResource extends Resource {
-  do: Item | Skill | Macro;
-}
+export type CombatResource = Resource & BaseCombatResource;
 
 export interface BanishSource extends CombatResource {
   do: Item | Skill;
@@ -91,7 +89,7 @@ export class BanishState {
   isPartiallyBanished(task: Task): boolean {
     return (
       task.combat
-        ?.where(MonsterStrategy.Banish)
+        ?.where("banish")
         ?.find(
           (monster) =>
             this.already_banished.has(monster) &&
@@ -103,9 +101,8 @@ export class BanishState {
   // Return true if all requested monsters in the task are banished
   isFullyBanished(task: Task): boolean {
     return (
-      task.combat
-        ?.where(MonsterStrategy.Banish)
-        ?.find((monster) => !this.already_banished.has(monster)) === undefined
+      task.combat?.where("banish")?.find((monster) => !this.already_banished.has(monster)) ===
+      undefined
     );
   }
 
@@ -114,7 +111,7 @@ export class BanishState {
     const used_banishes = new Set<Item | Skill>();
     for (const task of tasks) {
       if (task.combat === undefined) continue;
-      for (const monster of task.combat.where(MonsterStrategy.Banish)) {
+      for (const monster of task.combat.where("banish")) {
         const banished_with = this.already_banished.get(monster);
         if (banished_with !== undefined) used_banishes.add(banished_with);
       }
@@ -125,7 +122,7 @@ export class BanishState {
 }
 
 export interface WandererSource extends Resource {
-  monster: Monster | string;
+  monsters: Monster[];
   chance: () => number;
   action?: Macro;
 }
@@ -140,8 +137,13 @@ export const wandererSources: WandererSource[] = [
       get("_voteFreeFights") < 3 &&
       atLevel(5),
     equip: $item`"I Voted!" sticker`,
-    monster:
-      "monsterid 2094 || monsterid 2095 || monsterid 2096 || monsterid 2097 || monsterid 2098",
+    monsters: [
+      $monster`government bureaucrat`,
+      $monster`terrible mutant`,
+      $monster`angry ghost`,
+      $monster`annoyed snake`,
+      $monster`slime blob`,
+    ],
     chance: () => 1, // when available
   },
   {
@@ -153,14 +155,14 @@ export const wandererSources: WandererSource[] = [
       (itemAmount($item`barrel of gunpowder`) >= 5 || // Done with cmg + meteor trick
         get("sidequestLighthouseCompleted") !== "none"),
     equip: $item`cursed magnifying glass`,
-    monster: "monsterid 2227 || monsterid 2228 || monsterid 2229",
+    monsters: [$monster`void guy`, $monster`void slab`, $monster`void spider`],
     chance: () => 1, // when available
   },
   {
     name: "Kramco",
     available: () => have($item`Kramco Sausage-o-Matic™`) && atLevel(5),
     equip: $item`Kramco Sausage-o-Matic™`,
-    monster: $monster`sausage goblin`,
+    monsters: [$monster`sausage goblin`],
     chance: () => getKramcoWandererChance(),
     action: new Macro().trySkill($skill`Emit Matter Duplicating Drones`),
   },

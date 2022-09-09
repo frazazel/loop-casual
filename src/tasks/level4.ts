@@ -1,8 +1,21 @@
 import { itemAmount, myDaycount, numericModifier, use, visitUrl } from "kolmafia";
-import { $effect, $item, $items, $location, $monster, $monsters, $skill, ensureEffect, get, have, Macro } from "libram";
-import { OutfitSpec, Quest, step } from "./structure";
-import { OverridePriority } from "../priority";
-import { CombatStrategy } from "../combat";
+import {
+  $effect,
+  $item,
+  $items,
+  $location,
+  $monster,
+  $monsters,
+  $skill,
+  ensureEffect,
+  get,
+  have,
+  Macro,
+} from "libram";
+import { Quest } from "../engine/task";
+import { OutfitSpec, step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
 import { councilSafe } from "./level12";
 import { stenchRes } from "./absorb";
@@ -26,10 +39,14 @@ export const BatQuest: Quest = {
       completed: () => step("questL04Bat") + itemAmount($item`sonar-in-a-biscuit`) >= 1,
       do: $location`Guano Junction`,
       ready: () => stenchRes(true) >= 1,
-      priority: () => have($item`industrial fire extinguisher`) || have($skill`Double Nanovision`) ? OverridePriority.None : OverridePriority.BadMood,
+      priority: () =>
+        have($item`industrial fire extinguisher`) || have($skill`Double Nanovision`)
+          ? OverridePriority.None
+          : OverridePriority.BadMood,
       prepare: () => {
         if (numericModifier("stench resistance") < 1) ensureEffect($effect`Red Door Syndrome`);
-        if (numericModifier("stench resistance") < 1) throw `Unable to ensure stench res for guano junction`;
+        if (numericModifier("stench resistance") < 1)
+          throw `Unable to ensure stench res for guano junction`;
       },
       post: () => {
         if (have($item`sonar-in-a-biscuit`)) use($item`sonar-in-a-biscuit`);
@@ -64,12 +81,16 @@ export const BatQuest: Quest = {
       name: "Get Sonar 2",
       after: ["Use Sonar 1"],
       completed: () => step("questL04Bat") + itemAmount($item`sonar-in-a-biscuit`) >= 2,
-      priority: () => step("questL11Shen") === 999 ||
+      priority: () =>
+        step("questL11Shen") === 999 ||
         have($item`The Stankara Stone`) ||
-        (myDaycount() === 1 && step("questL11Shen") > 1) ? OverridePriority.None : OverridePriority.BadMood,
+        (myDaycount() === 1 && step("questL11Shen") > 1)
+          ? OverridePriority.None
+          : OverridePriority.BadMood,
       prepare: () => {
         if (numericModifier("stench resistance") < 1) ensureEffect($effect`Red Door Syndrome`);
-        if (numericModifier("stench resistance") < 1) throw `Unable to ensure stench res for guano junction`;
+        if (numericModifier("stench resistance") < 1)
+          throw `Unable to ensure stench res for guano junction`;
       },
       do: $location`Guano Junction`,
       post: () => {
@@ -93,7 +114,8 @@ export const BatQuest: Quest = {
       completed: () => step("questL04Bat") + itemAmount($item`sonar-in-a-biscuit`) >= 3,
       prepare: () => {
         if (numericModifier("stench resistance") < 1) ensureEffect($effect`Red Door Syndrome`);
-        if (numericModifier("stench resistance") < 1) throw `Unable to ensure stench res for guano junction`;
+        if (numericModifier("stench resistance") < 1)
+          throw `Unable to ensure stench res for guano junction`;
       },
       do: $location`Guano Junction`,
       post: () => {
@@ -127,7 +149,7 @@ export const BatQuest: Quest = {
       do: $location`The Boss Bat's Lair`,
       combat: new CombatStrategy()
         .macro(new Macro().trySkill($skill`Back-Up to your Last Enemy`))
-        .kill(...$monsters`Boss Bat, lobsterfrogman`),
+        .kill($monsters`Boss Bat, lobsterfrogman`),
       outfit: { equip: $items`backup camera` },
       limit: { tries: 4 },
     },

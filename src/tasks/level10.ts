@@ -1,9 +1,10 @@
 import { cliExecute, containsText, use, visitUrl } from "kolmafia";
-import { $effect, $item, $items, $location, $monster, have } from "libram";
-import { CombatStrategy } from "../combat";
+import { $effect, $item, $items, $location, $monster, $monsters, have } from "libram";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
-import { Quest, step } from "./structure";
-import { OverridePriority } from "../priority";
+import { Quest } from "../engine/task";
+import { step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
 import { councilSafe } from "./level12";
 import { yellowray } from "./yellowray";
 
@@ -26,7 +27,8 @@ export const GiantQuest: Quest = {
       completed: () => have($item`enchanted bean`) || step("questL10Garbage") >= 1,
       do: $location`The Beanbat Chamber`,
       outfit: {
-        modifier: "item", avoid: $items`broken champagne bottle`,
+        modifier: "item",
+        avoid: $items`broken champagne bottle`,
       },
       combat: new CombatStrategy().killItem($monster`beanbat`),
       limit: { soft: 5 },
@@ -57,7 +59,10 @@ export const GiantQuest: Quest = {
         combat: new CombatStrategy()
           .killItem($monster`Burly Sidekick`)
           .killItem($monster`Quiet Healer`),
-      }, { modifier: "-combat, item", avoid: $items`broken champagne bottle`, }, $monster`Quiet Healer`),
+      },
+      { modifier: "-combat, item", avoid: $items`broken champagne bottle` },
+      $monster`Quiet Healer`
+    ),
     {
       name: "Airship",
       after: ["Airship YR Healer"],
@@ -71,7 +76,7 @@ export const GiantQuest: Quest = {
       limit: { soft: 50 },
       delay: () =>
         have($item`Plastic Wrap Immateria`) ? 25 : have($item`Gauze Immateria`) ? 20 : 15, // After that, just look for noncombats
-      combat: new CombatStrategy().killItem($monster`Quiet Healer`, $monster`Burly Sidekick`),
+      combat: new CombatStrategy().killItem($monsters`Quiet Healer, Burly Sidekick`),
     },
     {
       name: "Basement Search",
@@ -112,10 +117,10 @@ export const GiantQuest: Quest = {
       name: "Ground Knife",
       after: ["Ground", "Tower/Wall of Meat"],
       completed: () =>
-        have($item`electric boning knife`)
-        || step("questL13Final") > 8
-        || have($item`Great Wolf's rocket launcher`)
-        || have($item`Drunkula's bell`),
+        have($item`electric boning knife`) ||
+        step("questL13Final") > 8 ||
+        have($item`Great Wolf's rocket launcher`) ||
+        have($item`Drunkula's bell`),
       do: $location`The Castle in the Clouds in the Sky (Ground Floor)`,
       choices: { 672: 3, 673: 3, 674: 3, 1026: 2 },
       outfit: { modifier: "-combat" },

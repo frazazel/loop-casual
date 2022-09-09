@@ -1,10 +1,11 @@
 import { drink, Item, itemAmount, toInt, visitUrl } from "kolmafia";
 import { $item, $items, $location, $monsters, $skill, get, have } from "libram";
-import { CombatStrategy } from "../combat";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
-import { OverridePriority } from "../priority";
+import { OverridePriority } from "../engine/priority";
 import { councilSafe } from "./level12";
-import { Quest, step } from "./structure";
+import { Quest } from "../engine/task";
+import { step } from "grimoire-kolmafia";
 
 export const FriarQuest: Quest = {
   name: "Friar",
@@ -139,7 +140,7 @@ export const OrganQuest: Quest = {
       do: $location`The Laugh Floor`,
       outfit: { modifier: "+combat" },
       combat: new CombatStrategy().kill(
-        ...$monsters`Carbuncle Top, Larry of the Field of Signs, Victor the Insult Comic Hellhound`
+        $monsters`Carbuncle Top, Larry of the Field of Signs, Victor the Insult Comic Hellhound`
       ),
       limit: { soft: 30 },
     },

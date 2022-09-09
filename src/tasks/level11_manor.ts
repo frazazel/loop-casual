@@ -1,4 +1,12 @@
-import { changeMcd, create, currentMcd, myInebriety, numericModifier, use, visitUrl } from "kolmafia";
+import {
+  changeMcd,
+  create,
+  currentMcd,
+  myInebriety,
+  numericModifier,
+  use,
+  visitUrl,
+} from "kolmafia";
 import {
   $effect,
   $item,
@@ -10,9 +18,10 @@ import {
   get,
   have,
 } from "libram";
-import { OutfitSpec, Quest, step, Task } from "./structure";
-import { CombatStrategy } from "../combat";
-import { OverridePriority } from "../priority";
+import { Quest, Task } from "../engine/task";
+import { OutfitSpec, step } from "grimoire-kolmafia";
+import { CombatStrategy } from "../engine/combat";
+import { OverridePriority } from "../engine/priority";
 
 const Manor1: Task[] = [
   {
@@ -52,14 +61,17 @@ const Manor1: Task[] = [
       .ignore()
       .killItem($monster`chalkdust wraith`)
       .kill($monster`pooltergeist (ultra-rare)`),
-    limit: { soft: 20, message: `Consider increasing your permanent pool skill with "A Shark's Chum", if you have not.` },
+    limit: {
+      soft: 20,
+      message: `Consider increasing your permanent pool skill with "A Shark's Chum", if you have not.`,
+    },
   },
   {
     name: "Library",
     after: ["Billiards"],
     completed: () => step("questM20Necklace") >= 4,
     do: $location`The Haunted Library`,
-    combat: new CombatStrategy().banish(...$monsters`banshee librarian, bookbat`).kill(),
+    combat: new CombatStrategy().banish($monsters`banshee librarian, bookbat`).kill(),
     choices: { 163: 4, 888: 4, 889: 5, 894: 1 },
     limit: { soft: 15 },
   },
@@ -85,7 +97,10 @@ const Manor2: Task[] = [
   {
     name: "Gallery Delay",
     after: ["Start Floor2"],
-    completed: () => $location`The Haunted Gallery`.turnsSpent >= 5 || have($item`Lady Spookyraven's dancing shoes`) || step("questM21Dance") >= 2,
+    completed: () =>
+      $location`The Haunted Gallery`.turnsSpent >= 5 ||
+      have($item`Lady Spookyraven's dancing shoes`) ||
+      step("questM21Dance") >= 2,
     do: $location`The Haunted Gallery`,
     choices: { 89: 6, 896: 1 }, // TODO: louvre
     limit: { turns: 5 },
@@ -103,7 +118,10 @@ const Manor2: Task[] = [
   {
     name: "Bathroom Delay",
     after: ["Start Floor2"],
-    completed: () => $location`The Haunted Bathroom`.turnsSpent >= 5 || have($item`Lady Spookyraven's powder puff`) || step("questM21Dance") >= 2,
+    completed: () =>
+      $location`The Haunted Bathroom`.turnsSpent >= 5 ||
+      have($item`Lady Spookyraven's powder puff`) ||
+      step("questM21Dance") >= 2,
     do: $location`The Haunted Bathroom`,
     choices: { 881: 1, 105: 1, 892: 1 },
     combat: new CombatStrategy().kill($monster`cosmetics wraith`),
@@ -143,9 +161,9 @@ const Manor2: Task[] = [
       897: 2,
     },
     combat: new CombatStrategy()
-      .kill(...$monsters`elegant animated nightstand, animated ornate nightstand`) // kill ornate nightstand if banish fails
+      .kill($monsters`elegant animated nightstand, animated ornate nightstand`) // kill ornate nightstand if banish fails
       .banish(
-        ...$monsters`animated mahogany nightstand, animated rustic nightstand, Wardröb nightstand`
+        $monsters`animated mahogany nightstand, animated rustic nightstand, Wardröb nightstand`
       )
       .ignore($monster`tumbleweed`),
     delay: () => (have($item`Lord Spookyraven's spectacles`) ? 5 : 0),
@@ -170,7 +188,7 @@ const Manor2: Task[] = [
     combat: new CombatStrategy()
       .kill($monster`animated ornate nightstand`)
       .banish(
-        ...$monsters`animated mahogany nightstand, animated rustic nightstand, Wardröb nightstand, elegant animated nightstand`
+        $monsters`animated mahogany nightstand, animated rustic nightstand, Wardröb nightstand, elegant animated nightstand`
       )
       .ignore($monster`tumbleweed`),
     limit: { soft: 10 },
@@ -236,7 +254,7 @@ const ManorBasement: Task[] = [
     choices: { 901: 2 },
     combat: new CombatStrategy()
       .killItem($monster`possessed wine rack`)
-      .banish(...$monsters`mad wino, skeletal sommelier`),
+      .banish($monsters`mad wino, skeletal sommelier`),
     limit: { soft: 10 },
   },
   {
@@ -254,7 +272,7 @@ const ManorBasement: Task[] = [
     choices: { 891: 2 },
     combat: new CombatStrategy()
       .killItem($monster`cabinet of Dr. Limpieza`)
-      .banish(...$monsters`plaid ghost, possessed laundry press`),
+      .banish($monsters`plaid ghost, possessed laundry press`),
     limit: { soft: 10 },
   },
   {
@@ -273,18 +291,24 @@ const ManorBasement: Task[] = [
     prepare: () => {
       if (numericModifier("Monster Level") < 81) changeMcd(10);
     },
-    post: () => { if (currentMcd() > 0) changeMcd(0); },
+    post: () => {
+      if (currentMcd() > 0) changeMcd(0);
+    },
     do: $location`The Haunted Boiler Room`,
     outfit: (): OutfitSpec => {
       if (have($item`old patched suit-pants`) && have($item`backup camera`))
         // eslint-disable-next-line libram/verify-constants
-        return { modifier: "ML", equip: $items`unstable fulminate, old patched suit-pants`, avoid: $items`Jurassic Parka` };
+        return {
+          modifier: "ML",
+          equip: $items`unstable fulminate, old patched suit-pants`,
+          avoid: $items`Jurassic Parka`,
+        };
       return { modifier: "ML", equip: $items`unstable fulminate, old patched suit-pants` };
     },
     choices: { 902: 2 },
     combat: new CombatStrategy()
       .kill($monster`monstrous boiler`)
-      .banish(...$monsters`coaltergeist, steam elemental`),
+      .banish($monsters`coaltergeist, steam elemental`),
     limit: { soft: 10 },
   },
   {
@@ -316,8 +340,9 @@ export const ManorQuest: Quest = {
       after: ["Blow Wall"],
       completed: () => step("questL11Manor") >= 999,
       do: () => visitUrl("place.php?whichplace=manor4&action=manor4_chamberboss"),
-      combat: new CombatStrategy(true).kill(),
+      combat: new CombatStrategy().kill(),
       limit: { tries: 1 },
+      boss: true,
     },
   ],
 };

@@ -12,7 +12,14 @@ import {
   Item,
   itemAmount,
   knollAvailable,
-  Monster, myAscensions, myFamiliar, runCombat, use, userConfirm, visitUrl, wait
+  Monster,
+  myAscensions,
+  myFamiliar,
+  runCombat,
+  use,
+  userConfirm,
+  visitUrl,
+  wait,
 } from "kolmafia";
 import {
   $familiar,
@@ -26,13 +33,14 @@ import {
   Macro,
   set,
 } from "libram";
-import { CombatStrategy } from "../combat";
+import { CombatStrategy } from "../engine/combat";
 import { debug } from "../lib";
 import { args } from "../main";
-import { OverridePriority } from "../priority";
-import { GameState } from "../state";
+import { OverridePriority } from "../engine/priority";
+import { globalStateCache } from "../engine/state";
 import { yellowray } from "./yellowray";
-import { Quest, step, Task } from "./structure";
+import { Quest, Task } from "../engine/task";
+import { step } from "grimoire-kolmafia";
 
 type ExtraReprocessTarget = {
   after: string[];
@@ -69,7 +77,7 @@ const extraReprocessTargets: ExtraReprocessTarget[] = [
 
 type SummonTarget = Omit<Task, "do" | "name" | "limit"> & {
   target: Monster;
-}
+};
 const summonTargets: SummonTarget[] = [
   {
     target: $monster`pygmy witch lawyer`,
@@ -147,24 +155,40 @@ const summonTargets: SummonTarget[] = [
             .filter((id) => id > 0)
             .map((id) => Item.get(id))
         );
-        if (!pulled.has($item`asbestos ore`) && !pulled.has($item`chrome ore`) && !pulled.has($item`linoleum ore`)) ore_needed--;
-        return itemAmount($item`asbestos ore`) >= ore_needed || itemAmount($item`chrome ore`) >= ore_needed || itemAmount($item`linoleum ore`) >= ore_needed;
+        if (
+          !pulled.has($item`asbestos ore`) &&
+          !pulled.has($item`chrome ore`) &&
+          !pulled.has($item`linoleum ore`)
+        )
+          ore_needed--;
+        return (
+          itemAmount($item`asbestos ore`) >= ore_needed ||
+          itemAmount($item`chrome ore`) >= ore_needed ||
+          itemAmount($item`linoleum ore`) >= ore_needed
+        );
       },
       prepare: () => {
-        if (have($item`unwrapped knock-off retro superhero cape`)) cliExecute("retrocape heck hold");
+        if (have($item`unwrapped knock-off retro superhero cape`))
+          cliExecute("retrocape heck hold");
       },
       outfit: { equip: $items`unwrapped knock-off retro superhero cape` },
       combat: new CombatStrategy(),
-    }, { modifier: "item" }),
+    },
+    { modifier: "item" }
+  ),
   ...extraReprocessTargets.map((target: ExtraReprocessTarget): SummonTarget => {
     return {
       target: target.target,
       after: target.after,
-      completed: (state: GameState) => !state.absorb.isReprocessTarget(target.target) || !target.needed(),
+      completed: () =>
+        !globalStateCache.absorb().isReprocessTarget(target.target) || !target.needed(),
       priority: () => OverridePriority.GoodGoose,
       ready: () => familiarWeight($familiar`Grey Goose`) >= 6,
       outfit: () => {
-        if (CombatLoversLocket.have() && !CombatLoversLocket.unlockedLocketMonsters().includes(target.target)) {
+        if (
+          CombatLoversLocket.have() &&
+          !CombatLoversLocket.unlockedLocketMonsters().includes(target.target)
+        ) {
           // Store this monster in the locket for the next run
           return { familiar: $familiar`Grey Goose`, equip: $items`combat lover's locket` };
         } else {
@@ -172,7 +196,7 @@ const summonTargets: SummonTarget[] = [
         }
       },
       combat: new CombatStrategy()
-        .autoattack(new Macro().trySkill($skill`Re-Process Matter`))
+        // .autoattack(new Macro().trySkill($skill`Re-Process Matter`))
         .macro(new Macro().trySkill($skill`Re-Process Matter`))
         .kill(),
     };
@@ -185,9 +209,8 @@ const summonTargets: SummonTarget[] = [
     choices: { 940: 2 },
     outfit: { modifier: "item", avoid: $items`broken champagne bottle` },
     combat: new CombatStrategy().killItem(),
-  }
+  },
 ];
-
 
 type SummonSource = {
   name: string;
@@ -198,19 +221,19 @@ type SummonSource = {
 const summonSources: SummonSource[] = [
   {
     name: "Cargo Shorts",
-    available: () => have($item`Cargo Cultist Shorts`) && !get("_cargoPocketEmptied") ? 1 : 0,
-    canFight: (mon: Monster) => mon === $monster`mountain man`,  // Only use for mountain man
-    summon: () => cliExecute('cargo 565'),
+    available: () => (have($item`Cargo Cultist Shorts`) && !get("_cargoPocketEmptied") ? 1 : 0),
+    canFight: (mon: Monster) => mon === $monster`mountain man`, // Only use for mountain man
+    summon: () => cliExecute("cargo 565"),
   },
   {
     name: "White Page",
-    available: () => have($item`white page`) ? 1 : 0,
-    canFight: (mon: Monster) => mon === $monster`white lion`,  // Only use for mountain man
+    available: () => (have($item`white page`) ? 1 : 0),
+    canFight: (mon: Monster) => mon === $monster`white lion`, // Only use for mountain man
     summon: () => use($item`white page`),
   },
   {
     name: "Fax",
-    available: () => args.fax && !get("_photocopyUsed") ? 1 : 0,
+    available: () => (args.fax && !get("_photocopyUsed") ? 1 : 0),
     canFight: (mon: Monster) => canFaxbot(mon),
     summon: (mon: Monster) => {
       chatPrivate("cheesefax", mon.name);
@@ -224,19 +247,19 @@ const summonSources: SummonSource[] = [
   },
   {
     name: "Combat Locket",
-    available: () => CombatLoversLocket.have() ? CombatLoversLocket.reminiscesLeft() : 0,
+    available: () => (CombatLoversLocket.have() ? CombatLoversLocket.reminiscesLeft() : 0),
     canFight: (mon: Monster) => CombatLoversLocket.availableLocketMonsters().includes(mon),
     summon: (mon: Monster) => CombatLoversLocket.reminisce(mon),
   },
   {
     name: "Wish",
-    available: () => have($item`genie bottle`) ? 3 - get("_genieWishesUsed") : 0,
+    available: () => (have($item`genie bottle`) ? 3 - get("_genieWishesUsed") : 0),
     canFight: () => true,
     summon: (mon: Monster) => {
       cliExecute(`genie monster ${mon.name}`);
       visitUrl("main.php");
     },
-  }
+  },
 ];
 
 // From garbo
@@ -252,17 +275,14 @@ class SummonStrategy {
   sources: SummonSource[];
   plan = new Map<Monster, SummonSource>();
 
-  constructor(
-    targets: SummonTarget[],
-    sources: SummonSource[]
-  ) {
+  constructor(targets: SummonTarget[], sources: SummonSource[]) {
     this.targets = targets;
     this.sources = sources;
   }
 
-  public update(state: GameState): void {
+  public update(): void {
     this.plan.clear();
-    const targets = this.targets.filter((t) => !t.completed(state)).map((t) => t.target);
+    const targets = this.targets.filter((t) => !t.completed()).map((t) => t.target);
     for (const source of this.sources) {
       let available = source.available();
       for (const target of targets) {
@@ -288,13 +308,18 @@ export const SummonQuest: Quest = {
   tasks: summonTargets.map((task): Task => {
     return {
       ...task,
-      name: task.target.name.replace(/(^\w|\s\w)/g, m => m.toUpperCase()), // capitalize first letter of each word
-      ready: (state: GameState) => (task.ready?.(state) ?? true) && (summonStrategy.getSourceFor(task.target) !== undefined),
+      name: task.target.name.replace(/(^\w|\s\w)/g, (m) => m.toUpperCase()), // capitalize first letter of each word
+      ready: () =>
+        (task.ready?.() ?? true) && summonStrategy.getSourceFor(task.target) !== undefined,
       do: () => {
         // Some extra safety around the Pygmy Witch Lawyer summon
         if (task.target === $monster`pygmy witch lawyer`) {
           if (get("_loopgyou_fought_pygmy", false)) {
-            if (!userConfirm("We already tried to fight a pygmy witch lawyer today and lost (or failed to start the fight). Are you sure we can win this time? Consider fighting a pygymy witch lawyer yourself (buy yellow rocket; ensure you have no ML running and +50 combat initative). Press yes to let the script try the fight again, or no to abort.")) {
+            if (
+              !userConfirm(
+                "We already tried to fight a pygmy witch lawyer today and lost (or failed to start the fight). Are you sure we can win this time? Consider fighting a pygymy witch lawyer yourself (buy yellow rocket; ensure you have no ML running and +50 combat initative). Press yes to let the script try the fight again, or no to abort."
+              )
+            ) {
               throw `Abort requested`;
             }
           }
@@ -306,11 +331,10 @@ export const SummonQuest: Quest = {
         if (source) {
           debug(`Summon source: ${source.name}`);
           source.summon(task.target);
-        }
-        else throw `Unable to find summon source for ${task.target.name}`;
+        } else throw `Unable to find summon source for ${task.target.name}`;
         runCombat();
       },
       limit: { tries: 1 },
     };
-  })
-}
+  }),
+};

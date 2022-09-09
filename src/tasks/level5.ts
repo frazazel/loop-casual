@@ -12,12 +12,13 @@ import {
   have,
   Macro,
 } from "libram";
-import { OutfitSpec, Quest, step } from "./structure";
-import { OverridePriority } from "../priority";
-import { CombatStrategy } from "../combat";
+import { Quest } from "../engine/task";
+import { OutfitSpec, step } from "grimoire-kolmafia";
+import { OverridePriority } from "../engine/priority";
+import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
 import { councilSafe } from "./level12";
-import { GameState } from "../state";
+import { globalStateCache } from "../engine/state";
 
 export const KnobQuest: Quest = {
   name: "Knob",
@@ -68,7 +69,8 @@ export const KnobQuest: Quest = {
           };
         else
           return {
-            modifier: "item", avoid: $items`broken champagne bottle`,
+            modifier: "item",
+            avoid: $items`broken champagne bottle`,
           };
       },
       combat: new CombatStrategy()
@@ -79,18 +81,18 @@ export const KnobQuest: Quest = {
         )
         .macro(
           // Don't use the fire extinguisher if we want to absorb the madam
-          (state: GameState) =>
+          () =>
             new Macro().externalIf(
-              !state.absorb.isTarget($monster`Knob Goblin Madam`),
+              !globalStateCache.absorb().isTarget($monster`Knob Goblin Madam`),
               new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`)
             ),
           $monster`Knob Goblin Madam`
         )
         .macro(
           // Don't use the fire extinguisher if we want to absorb the girl
-          (state: GameState) =>
+          () =>
             new Macro().externalIf(
-              !state.absorb.isTarget($monster`Knob Goblin Harem Girl`),
+              !globalStateCache.absorb().isTarget($monster`Knob Goblin Harem Girl`),
               new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`)
             ),
           $monster`Knob Goblin Harem Girl`
@@ -117,10 +119,14 @@ export const KnobQuest: Quest = {
         have($effect`Knob Goblin Perfume`) ? OverridePriority.Effect : OverridePriority.None,
       completed: () => step("questL05Goblin") === 999,
       do: $location`Throne Room`,
-      combat: new CombatStrategy(true).kill($monster`Knob Goblin King`),
-      outfit: { equip: $items`Knob Goblin harem veil, Knob Goblin harem pants`, modifier: "moxie, -10ML" },
+      combat: new CombatStrategy().kill($monster`Knob Goblin King`),
+      outfit: {
+        equip: $items`Knob Goblin harem veil, Knob Goblin harem pants`,
+        modifier: "moxie, -10ML",
+      },
       effects: $effects`Knob Goblin Perfume`,
       limit: { tries: 1 },
+      boss: true,
     },
     {
       name: "Open Menagerie",
