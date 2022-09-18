@@ -6,10 +6,14 @@ import {
   equippedAmount,
   Familiar,
   familiarWeight,
+  getWorkshed,
   gnomadsAvailable,
+  haveEquipped,
   hermit,
+  inHardcore,
   itemAmount,
   knollAvailable,
+  myAdventures,
   myAscensions,
   myBasestat,
   myHp,
@@ -36,6 +40,7 @@ import {
   $monsters,
   $skill,
   $stat,
+  AsdonMartin,
   ensureEffect,
   get,
   getSaleValue,
@@ -72,7 +77,9 @@ export const MiscQuest: Quest = {
     {
       name: "Island Scrip",
       after: ["Unlock Beach"],
-      ready: () => myMeat() >= 6000 || (step("questL11Black") >= 4 && myMeat() >= 500),
+      ready: () =>
+        (myMeat() >= 6000 || (step("questL11Black") >= 4 && myMeat() >= 500)) &&
+        myAdventures() >= 20,
       completed: () =>
         itemAmount($item`Shore Inc. Ship Trip Scrip`) >= 3 ||
         have($item`dinghy plans`) ||
@@ -162,7 +169,7 @@ export const MiscQuest: Quest = {
 
         visitUrl("place.php?whichplace=town_right&action=townright_vote");
 
-        const votingMonsterPriority = voterValueTable
+        const monPriority = voterValueTable
           .sort((a, b) => b.value - a.value)
           .map((element) => element.monster.name);
 
@@ -180,33 +187,16 @@ export const MiscQuest: Quest = {
         ]);
 
         const monsterVote =
-          votingMonsterPriority.indexOf(get("_voteMonster1")) <
-          votingMonsterPriority.indexOf(get("_voteMonster2"))
+          monPriority.indexOf(get("_voteMonster1")) < monPriority.indexOf(get("_voteMonster2"))
             ? 1
             : 2;
 
         const voteLocalPriorityArr = [
-          [
-            0,
-            initPriority.get(get("_voteLocal1")) ||
-              (get("_voteLocal1").indexOf("-") === -1 ? 1 : -1),
-          ],
-          [
-            1,
-            initPriority.get(get("_voteLocal2")) ||
-              (get("_voteLocal2").indexOf("-") === -1 ? 1 : -1),
-          ],
-          [
-            2,
-            initPriority.get(get("_voteLocal3")) ||
-              (get("_voteLocal3").indexOf("-") === -1 ? 1 : -1),
-          ],
-          [
-            3,
-            initPriority.get(get("_voteLocal4")) ||
-              (get("_voteLocal4").indexOf("-") === -1 ? 1 : -1),
-          ],
-        ];
+          "_voteLocal1",
+          "_voteLocal2",
+          "_voteLocal3",
+          "_voteLocal4",
+        ].map((v, i) => [i, initPriority.get(get(v)) || (get(v).indexOf("-") === -1 ? 1 : -1)]);
 
         const bestVotes = voteLocalPriorityArr.sort((a, b) => b[1] - a[1]);
         const firstInit = bestVotes[0][0];
@@ -215,6 +205,10 @@ export const MiscQuest: Quest = {
         visitUrl(
           `choice.php?option=1&whichchoice=1331&g=${monsterVote}&local[]=${firstInit}&local[]=${secondInit}`
         );
+
+        if (!have($item`"I Voted!" sticker`)) {
+          cliExecute("refresh all");
+        }
       },
       limit: { tries: 1 },
       freeaction: true,
@@ -316,6 +310,24 @@ export const MiscQuest: Quest = {
         return { equip: $items`protonic accelerator pack`, modifier: "DA, DR" };
       },
       combat: new CombatStrategy().macro(() => {
+        if (get("lovebugsUnlocked")) {
+          return new Macro()
+            .skill($skill`Summon Love Gnats`)
+            .skill($skill`Shoot Ghost`)
+            .skill($skill`Shoot Ghost`)
+            .skill($skill`Shoot Ghost`)
+            .skill($skill`Trap Ghost`);
+        }
+
+        if (haveEquipped($item`designer sweatpants`) && get("sweat") >= 5) {
+          return new Macro()
+            .skill($skill`Sweat Flood`)
+            .skill($skill`Shoot Ghost`)
+            .skill($skill`Shoot Ghost`)
+            .skill($skill`Shoot Ghost`)
+            .skill($skill`Trap Ghost`);
+        }
+
         if (
           myHp() < myMaxhp() ||
           get("ghostLocation") === $location`The Haunted Wine Cellar` ||
@@ -397,7 +409,11 @@ export const MiscQuest: Quest = {
     },
     {
       name: "Fortune",
-      after: ["Hidden City/Open City"],
+      after: [],
+      ready: () =>
+        ((inHardcore() && myAdventures() < 20 && myTurncount() >= 50) ||
+          step("questL11Worship") >= 3) &&
+        familiarWeight($familiar`Grey Goose`) < 6,
       completed: () => get("_clanFortuneBuffUsed") || !have($item`Clan VIP Lounge key`),
       priority: () => OverridePriority.Free,
       do: () => {
@@ -508,7 +524,7 @@ export const MiscQuest: Quest = {
     },
     {
       name: "Tune from Muscle",
-      after: ["Unlock Beach", "Reprocess/The Bugbear Pen"],
+      after: ["Unlock Beach", "Reprocess/The Bugbear Pen", "Bugbear Outfit"],
       ready: () =>
         knollAvailable() &&
         (mySign() !== "Vole" ||
@@ -584,6 +600,34 @@ export const MiscQuest: Quest = {
       completed: () => !have($item`mumming trunk`) || get("_mummeryUses").includes("2,"),
       do: () => cliExecute("mummery mp"),
       outfit: { familiar: $familiar`Grey Goose` },
+      limit: { tries: 1 },
+      freeaction: true,
+    },
+    {
+      name: "Swap Workshed",
+      after: [],
+      priority: () => OverridePriority.Free,
+      ready: () =>
+        get("_coldMedicineConsults") >= 5 && getWorkshed() === $item`cold medicine cabinet`,
+      completed: () =>
+        !have($item`Asdon Martin keyfob`) || get("_workshedItemUsed") || myTurncount() >= 1000,
+      do: () => use($item`Asdon Martin keyfob`),
+      limit: { tries: 1 },
+      freeaction: true,
+    },
+    {
+      name: "Bugbear Outfit",
+      after: [],
+      priority: () => OverridePriority.Free,
+      ready: () => myMeat() >= 140,
+      completed: () =>
+        (!have($item`Asdon Martin keyfob`) && !AsdonMartin.installed()) ||
+        !knollAvailable() ||
+        (have($item`bugbear beanie`) && have($item`bugbear bungguard`)),
+      do: () => {
+        retrieveItem($item`bugbear beanie`);
+        retrieveItem($item`bugbear bungguard`);
+      },
       limit: { tries: 1 },
       freeaction: true,
     },

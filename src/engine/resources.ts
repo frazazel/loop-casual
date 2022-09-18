@@ -1,15 +1,25 @@
-import { cliExecute, Familiar, Item, Monster, Skill, totalTurnsPlayed } from "kolmafia";
+import {
+  cliExecute,
+  Familiar,
+  Item,
+  Monster,
+  myMeat,
+  myTurncount,
+  Skill,
+  totalTurnsPlayed,
+} from "kolmafia";
 import {
   $item,
   $monster,
   $skill,
+  AsdonMartin,
   get,
   getBanishedMonsters,
   getKramcoWandererChance,
   have,
   Macro,
 } from "libram";
-import { CombatResource as BaseCombatResource, OutfitSpec } from "grimoire-kolmafia";
+import { CombatResource as BaseCombatResource, OutfitSpec, step } from "grimoire-kolmafia";
 import { atLevel } from "../lib";
 import { Task } from "./task";
 
@@ -32,6 +42,21 @@ const banishSources: BanishSource[] = [
     name: "Bowl Curveball",
     available: () => have($item`cosmic bowling ball`),
     do: $skill`Bowl a Curveball`,
+  },
+  {
+    name: "Asdon Martin",
+    available: (): boolean => {
+      // From libram
+      if (!asdonFualable(50)) return false;
+      const banishes = get("banishedMonsters").split(":");
+      const bumperIndex = banishes
+        .map((string) => string.toLowerCase())
+        .indexOf("spring-loaded front bumper");
+      if (bumperIndex === -1) return true;
+      return myTurncount() - parseInt(banishes[bumperIndex + 1]) > 30;
+    },
+    prepare: () => AsdonMartin.fillTo(50),
+    do: $skill`Asdon Martin: Spring-Loaded Front Bumper`,
   },
   {
     name: "System Sweep",
@@ -190,6 +215,23 @@ export const runawaySources: RunawaySource[] = [
     banishes: true,
   },
   {
+    name: "Asdon Martin",
+    available: (): boolean => {
+      // From libram
+      if (!asdonFualable(50)) return false;
+      const banishes = get("banishedMonsters").split(":");
+      const bumperIndex = banishes
+        .map((string) => string.toLowerCase())
+        .indexOf("spring-loaded front bumper");
+      if (bumperIndex === -1) return true;
+      return myTurncount() - parseInt(banishes[bumperIndex + 1]) > 30;
+    },
+    prepare: () => AsdonMartin.fillTo(50),
+    do: new Macro().skill($skill`Asdon Martin: Spring-Loaded Front Bumper`),
+    chance: () => 1,
+    banishes: true,
+  },
+  {
     name: "GAP",
     available: () => have($item`Greatest American Pants`),
     equip: $item`Greatest American Pants`,
@@ -218,4 +260,36 @@ export interface FreekillSource extends CombatResource {
   do: Item | Skill;
 }
 
-export const freekillSources: FreekillSource[] = [];
+export const freekillSources: FreekillSource[] = [
+  {
+    name: "Lil' Doctor™ bag",
+    available: () => have($item`Lil' Doctor™ bag`) && get("_chestXRayUsed") < 3,
+    do: $skill`Chest X-Ray`,
+    equip: $item`Lil' Doctor™ bag`,
+  },
+  {
+    name: "Replica bat-oomerang",
+    available: () => have($item`replica bat-oomerang`) && get("_usedReplicaBatoomerang") < 3,
+    do: $item`replica bat-oomerang`,
+  },
+  {
+    name: "The Jokester's gun",
+    available: () => have($item`The Jokester's gun`) && !get("_firedJokestersGun"),
+    do: $skill`Fire the Jokester's Gun`,
+    equip: $item`The Jokester's gun`,
+  },
+  {
+    name: "Asdon Martin: Missile Launcher",
+    available: () => asdonFualable(100) && !get("_missileLauncherUsed"),
+    prepare: () => AsdonMartin.fillTo(100),
+    do: $skill`Asdon Martin: Missile Launcher`,
+  },
+];
+
+function asdonFualable(amount: number): boolean {
+  if (!AsdonMartin.installed()) return false;
+  if (!have($item`bugbear bungguard`) || !have($item`bugbear beanie`)) return false;
+  if (!have($item`forged identification documents`) && step("questL11Black") < 4) return false; // Save early
+  if (myMeat() < amount * 24 + 1000) return false; // save 1k meat as buffer
+  return true;
+}

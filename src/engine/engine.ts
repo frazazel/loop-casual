@@ -64,7 +64,7 @@ import {
   fixFoldables,
 } from "./outfit";
 import { cliExecute, equippedAmount, itemAmount, runChoice } from "kolmafia";
-import { debug } from "../lib";
+import { atLevel, debug } from "../lib";
 import {
   canChargeVoid,
   freekillSources,
@@ -337,11 +337,13 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       }
 
       // Set up a free kill if needed, or if no free kills will ever be needed again
+      // (after L11, when Infinite Loop is less important)
       if (
         combat.can("killFree") ||
         (combat.can("kill") &&
           !task.boss &&
-          this.tasks.every((t) => t.completed() || !t.combat?.can("killFree")))
+          this.tasks.every((t) => t.completed() || !t.combat?.can("killFree")) &&
+          atLevel(11))
       ) {
         resources.provide("killFree", equipFirst(outfit, freekillSources));
       }
@@ -355,7 +357,6 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
     // Prepare full outfit
     if (!outfit.skipDefaults) {
       const freecombat = task.freecombat || wanderers.find((wanderer) => wanderer.chance() === 1);
-      // if (!task_combat.boss && !freecombat) outfit.equip($item`carnivorous potted plant`);
       if (
         canChargeVoid() &&
         (!outfit.modifier || !outfit.modifier.includes("-combat")) &&
@@ -364,6 +365,8 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       )
         outfit.equip($item`cursed magnifying glass`);
 
+      if (!task.boss && !freecombat && !outfit.modifier)
+        outfit.equip($item`carnivorous potted plant`);
       equipDefaults(outfit);
     }
 
@@ -496,7 +499,6 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
     }
     globalStateCache.invalidate();
   }
-
   initPropertiesManager(manager: PropertiesManager): void {
     super.initPropertiesManager(manager);
     manager.set({
@@ -504,14 +506,26 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       louvreDesiredGoal: 7,
       requireBoxServants: false,
       autoAbortThreshold: "-0.05",
-      mpAutoRecoveryItems: ensureRecovery("mpAutoRecoveryItems", [
-        "black cherry soda",
-        "doc galaktik's invigorating tonic",
-      ]),
-      hpAutoRecoveryItems: ensureRecovery("hpAutoRecoveryItems", [
-        "scroll of drastic healing",
-        "doc galaktik's homeopathic elixir",
-      ]),
+      mpAutoRecoveryItems: ensureRecovery(
+        "mpAutoRecoveryItems",
+        ["black cherry soda", "doc galaktik's invigorating tonic"],
+        [
+          "rest in your campaway tent",
+          "rest at the chateau",
+          "rest at your campground",
+          "sleep on your clan sofa",
+        ]
+      ),
+      hpAutoRecoveryItems: ensureRecovery(
+        "hpAutoRecoveryItems",
+        ["scroll of drastic healing", "doc galaktik's homeopathic elixir"],
+        [
+          "rest in your campaway tent",
+          "rest at the chateau",
+          "rest at your campground",
+          "sleep on your clan sofa",
+        ]
+      ),
     });
     manager.setChoices({
       1106: 3, // Ghost Dog Chow
@@ -622,12 +636,12 @@ export function customRestoreMp(target: number) {
   restoreMp(target);
 }
 
-function ensureRecovery(property: string, items: string[]): string {
+function ensureRecovery(property: string, items: string[], avoid: string[]): string {
   const recovery_property = get(property).split(";");
   for (const item of items) {
     if (!recovery_property.includes(item)) {
       recovery_property.push(item);
     }
   }
-  return recovery_property.join(";");
+  return recovery_property.filter((v) => !avoid.includes(v)).join(";");
 }
