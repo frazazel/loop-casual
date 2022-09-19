@@ -61,6 +61,16 @@ export function equipCharging(outfit: Outfit): void {
     if (outfit.equip($familiar`Grey Goose`)) {
       outfit.equip($item`yule hatchet`);
       outfit.equip($item`teacher's pen`);
+
+      // Use latte mug for familiar exp
+      if (
+        !outfit.modifier?.includes("-combat") &&
+        have($item`latte lovers member's mug`) &&
+        get("latteModifier").includes("Experience (familiar): 3")
+      ) {
+        outfit.equip($item`latte lovers member's mug`);
+      }
+
       // Equip an offhand if it is not needed for the -combat umbrella
       if (
         !outfit.modifier?.includes("-combat") ||
@@ -93,8 +103,7 @@ export function equipDefaults(outfit: Outfit): void {
     outfit.equip($familiar`Temporal Riftlet`);
   } else if (have($item`gnomish housemaid's kgnee`)) {
     outfit.equip($familiar`Reagnimated Gnome`);
-  } else outfit.equip($familiar`Galloping Grill`);
-  outfit.equip($familiar`Melodramedary`);
+  }
 
   if (outfit.familiar === $familiar`Grey Goose` && familiarWeight($familiar`Grey Goose`) < 6)
     outfit.equip($item`grey down vest`);
@@ -118,7 +127,10 @@ export function equipDefaults(outfit: Outfit): void {
     outfit.equip($item`ice crown`);
     outfit.equip($item`June cleaver`);
     outfit.equip($item`industrial fire extinguisher`);
-    if (have($skill`Torso Awareness`)) outfit.equip($item`fresh coat of paint`);
+    if (have($skill`Torso Awareness`)) {
+      outfit.equip($item`Jurassic Parka`);
+      outfit.equip($item`fresh coat of paint`);
+    }
     outfit.equip($item`familiar scrapbook`);
     outfit.equip($item`protonic accelerator pack`);
     outfit.equip($item`unwrapped knock-off retro superhero cape`);

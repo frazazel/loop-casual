@@ -68,9 +68,12 @@ import { atLevel, debug } from "../lib";
 import {
   canChargeVoid,
   freekillSources,
+  refillLatte,
   runawaySources,
+  shouldFinishLatte,
   WandererSource,
   wandererSources,
+  yellowRaySources,
 } from "./resources";
 import { OverridePriority, Prioritization } from "./priority";
 import { args } from "../main";
@@ -286,6 +289,10 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
     if (wanderers.length === 0) {
       // Set up a banish if needed
 
+      if (combat.can("yellowRay") && !have($effect`Everything Looks Yellow`)) {
+        resources.provide("yellowRay", equipFirst(outfit, yellowRaySources));
+      }
+
       const banish_state = globalStateCache.banishes();
       if (combat.can("banish") && !banish_state.isFullyBanished(task)) {
         const available_tasks = this.tasks.filter((task) => this.available(task));
@@ -492,6 +499,7 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
 
   post(task: ActiveTask): void {
     super.post(task);
+    if (get("_latteBanishUsed") && shouldFinishLatte()) refillLatte();
     absorbConsumables();
     autosellJunk();
     for (const poisoned of $effects`Hardly Poisoned at All, A Little Bit Poisoned, Somewhat Poisoned, Really Quite Poisoned, Majorly Poisoned, Toad In The Hole`) {
@@ -561,7 +569,7 @@ function autosellJunk(): void {
   }
 
   // Sell all but one of a few items
-  const partial_junk = $items`porquoise, ruby W, metallic A, lowercase N, heavy D`;
+  const partial_junk = $items`ruby W, metallic A, lowercase N, heavy D`;
   for (const item of partial_junk) {
     if (itemAmount(item) > 1) autosell(item, itemAmount(item) - 1);
   }

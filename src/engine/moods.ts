@@ -25,6 +25,7 @@ import {
   uneffect,
 } from "libram";
 import { customRestoreMp } from "./engine";
+import { asdonFillTo, asdonFualable } from "./resources";
 
 function getRelevantEffects(): { [modifier: string]: Effect[] } {
   const result: { [name: string]: Effect[] } = {
@@ -108,11 +109,14 @@ export function applyEffects(modifier: string, required: Effect[]): void {
   for (const [slot, item] of hotswapped) equip(item, slot);
 
   // Use asdon martin
-  if (getWorkshed() === $item`Asdon Martin keyfob`) {
+  if (getWorkshed() === $item`Asdon Martin keyfob` && asdonFualable(37)) {
     // if (modifier.includes("-combat")) AsdonMartin.drive(AsdonMartin.Driving.Stealthily);
     // else if (modifier.includes("+combat")) AsdonMartin.drive(AsdonMartin.Driving.Obnoxiously);
     // else if (modifier.includes("init")) AsdonMartin.drive(AsdonMartin.Driving.Quickly);
-    if (modifier.includes("meat")) AsdonMartin.drive(AsdonMartin.Driving.Observantly);
+    if (modifier.includes("meat")) {
+      if (!have($effect`Driving Observantly`)) asdonFillTo(37); // done manually to use all-purpose flower
+      AsdonMartin.drive(AsdonMartin.Driving.Observantly);
+    }
   }
 }
 

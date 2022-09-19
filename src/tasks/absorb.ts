@@ -263,7 +263,6 @@ const absorbTasks: AbsorbTask[] = [
 
         const item = equippedItem(slot);
         if (item === $item`none`) continue;
-        // eslint-disable-next-line libram/verify-constants
         if (numericModifier(item, "Monster Level") === 0 && item !== $item`Jurassic Parka`)
           continue;
         if (item === $item`backup camera`) continue; // Always keep equipped to ensure we can get to 50
@@ -986,6 +985,7 @@ export function coldRes(with_black_paint: boolean, with_back = true): number {
   if (have($item`ghost of a necklace`)) res += 1;
   if (have($skill`Nanofur`)) res += 3;
   if (have($skill`Microweave`)) res += 2;
+  if (have($item`Jurassic Parka`) && have($skill`Torso Awareness`)) res += 3;
   if (
     with_black_paint &&
     (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))
@@ -1001,6 +1001,7 @@ export function stenchRes(with_black_paint: boolean): number {
   if (have($item`ghost of a necklace`)) res += 1;
   if (have($skill`Conifer Polymers`)) res += 3;
   if (have($skill`Clammy Microcilia`)) res += 2;
+  if (have($item`Jurassic Parka`) && have($skill`Torso Awareness`)) res += 3;
   if (
     with_black_paint &&
     (have($effect`Red Door Syndrome`) || (myMeat() >= 1000 && step("questL11Black") >= 2))

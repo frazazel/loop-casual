@@ -1,14 +1,21 @@
 import {
+  buy,
   cliExecute,
   Familiar,
+  getFuel,
   Item,
+  itemAmount,
   Monster,
+  myAscensions,
   myMeat,
   myTurncount,
+  retrieveItem,
   Skill,
   totalTurnsPlayed,
+  use,
 } from "kolmafia";
 import {
+  $effect,
   $item,
   $monster,
   $skill,
@@ -55,7 +62,7 @@ const banishSources: BanishSource[] = [
       if (bumperIndex === -1) return true;
       return myTurncount() - parseInt(banishes[bumperIndex + 1]) > 30;
     },
-    prepare: () => AsdonMartin.fillTo(50),
+    prepare: () => asdonFillTo(50),
     do: $skill`Asdon Martin: Spring-Loaded Front Bumper`,
   },
   {
@@ -66,17 +73,9 @@ const banishSources: BanishSource[] = [
   {
     name: "Latte",
     available: () =>
-      (!get("_latteBanishUsed") || get("_latteRefillsUsed") < 2) && // Save one refil for aftercore
+      (!get("_latteBanishUsed") || get("_latteRefillsUsed") < 2) && // Save one refill for aftercore
       have($item`latte lovers member's mug`),
-    prepare: (): void => {
-      if (get("_latteBanishUsed")) {
-        const modifiers = [];
-        if (get("latteUnlocks").includes("wing")) modifiers.push("wing");
-        if (get("latteUnlocks").includes("cajun")) modifiers.push("cajun");
-        modifiers.push("cinnamon", "pumpkin", "vanilla");
-        cliExecute(`latte refill ${modifiers.slice(0, 3).join(" ")}`); // Always unlocked
-      }
-    },
+    prepare: refillLatte,
     do: $skill`Throw Latte on Opponent`,
     equip: $item`latte lovers member's mug`,
   },
@@ -208,6 +207,18 @@ export const runawayValue =
 
 export const runawaySources: RunawaySource[] = [
   {
+    name: "Latte (Refill)",
+    available: () =>
+      (!get("_latteBanishUsed") || get("_latteRefillsUsed") < 2) && // Save one refill for aftercore
+      have($item`latte lovers member's mug`) &&
+      shouldFinishLatte(),
+    prepare: refillLatte,
+    do: new Macro().skill($skill`Throw Latte on Opponent`),
+    chance: () => 1,
+    equip: $item`latte lovers member's mug`,
+    banishes: true,
+  },
+  {
     name: "Bowl Curveball",
     available: () => false,
     do: new Macro().skill($skill`Bowl a Curveball`),
@@ -226,7 +237,7 @@ export const runawaySources: RunawaySource[] = [
       if (bumperIndex === -1) return true;
       return myTurncount() - parseInt(banishes[bumperIndex + 1]) > 30;
     },
-    prepare: () => AsdonMartin.fillTo(50),
+    prepare: () => asdonFillTo(50),
     do: new Macro().skill($skill`Asdon Martin: Spring-Loaded Front Bumper`),
     chance: () => 1,
     banishes: true,
@@ -281,15 +292,107 @@ export const freekillSources: FreekillSource[] = [
   {
     name: "Asdon Martin: Missile Launcher",
     available: () => asdonFualable(100) && !get("_missileLauncherUsed"),
-    prepare: () => AsdonMartin.fillTo(100),
+    prepare: () => asdonFillTo(100),
     do: $skill`Asdon Martin: Missile Launcher`,
   },
 ];
 
-function asdonFualable(amount: number): boolean {
+/**
+ * Actually fuel the asdon to the required amount.
+ */
+export function asdonFillTo(amount: number): boolean {
+  if (!have($item`bugbear bungguard`) || !have($item`bugbear beanie`)) {
+    // Prepare enough wad of dough from all-purpose flower
+    // We must do this ourselves since retrieveItem($item`loaf of soda bread`)
+    // in libram will not consider all-purpose flower
+    const remaining = amount - getFuel();
+    const count = Math.ceil(remaining / 5); // 5 is minimum adv gain from loaf of soda bread
+    if (itemAmount($item`wad of dough`) < count) {
+      buy($item`all-purpose flower`);
+      use($item`all-purpose flower`);
+    }
+  }
+  return AsdonMartin.fillTo(amount);
+}
+
+/**
+ * Return true if we can possibly fuel the asdon to the required amount.
+ */
+export function asdonFualable(amount: number): boolean {
   if (!AsdonMartin.installed()) return false;
-  if (!have($item`bugbear bungguard`) || !have($item`bugbear beanie`)) return false;
   if (!have($item`forged identification documents`) && step("questL11Black") < 4) return false; // Save early
-  if (myMeat() < amount * 24 + 1000) return false; // save 1k meat as buffer
-  return true;
+  if (amount <= getFuel()) return true;
+
+  // Use wad of dough with the bugbear outfit
+  if (have($item`bugbear bungguard`) && have($item`bugbear beanie`)) {
+    return myMeat() >= (amount - getFuel()) * 24 + 1000; // Save 1k meat as buffer
+  }
+
+  // Use all-purpose flower if we have enough ascensions
+  if (myAscensions() >= 10 && (have($item`bitchin' meatcar`) || have($item`Desert Bus pass`))) {
+    return myMeat() >= 3000 + (amount - getFuel()) * 14; // 2k for all-purpose flower + save 1k meat as buffer + soda water
+  }
+
+  return false;
+}
+
+/**
+ * Return true if we have all of our final latte ingredients, but they are not in the latte.
+ */
+export function shouldFinishLatte(): boolean {
+  if (!have($item`latte lovers member's mug`)) return false;
+  // Check that we have all the proper ingredients
+  for (const ingredient of ["wing", "cajun", "vitamins"])
+    if (!get("latteUnlocks").includes(ingredient)) return false;
+  // Check that the latte is not already finished
+  return !["Meat Drop: 40", "Combat Rate: 10", "Experience (familiar): 3"].every((modifier) =>
+    get("latteModifier").includes(modifier)
+  );
+}
+
+/**
+ * Refill the latte, using as many final ingredients as possible.
+ */
+export function refillLatte(): void {
+  if (get("_latteBanishUsed")) return;
+  const modifiers = [];
+  if (get("latteUnlocks").includes("wing")) modifiers.push("wing");
+  if (get("latteUnlocks").includes("cajun")) modifiers.push("cajun");
+  if (get("latteUnlocks").includes("vitamins")) modifiers.push("vitamins");
+  modifiers.push("cinnamon", "pumpkin", "vanilla"); // Always unlocked
+  cliExecute(`latte refill ${modifiers.slice(0, 3).join(" ")}`);
+}
+
+export type YellowRaySource = CombatResource;
+export const yellowRaySources: YellowRaySource[] = [
+  {
+    name: "Jurassic Parka",
+    available: () => have($skill`Torso Awareness`) && have($item`Jurassic Parka`),
+    prepare: () => {
+      if (get("parkaMode") !== "dilophosaur") cliExecute("parka dilophosaur");
+    },
+    equip: $item`Jurassic Parka`,
+    do: $skill`Spit jurassic acid`,
+  },
+  {
+    name: "Yellow Rocket",
+    available: () => myMeat() >= 250 && have($item`Clan VIP Lounge key`),
+    prepare: () => retrieveItem($item`yellow rocket`),
+    do: $item`yellow rocket`,
+  },
+  {
+    name: "Retro Superhero Cape",
+    available: () => have($item`unwrapped knock-off retro superhero cape`),
+    prepare: () => {
+      if (get("retroCapeSuperhero") !== "heck" || get("retroCapeWashingInstructions") !== "kiss")
+        cliExecute("retrocape heck kiss");
+    },
+    equip: $item`unwrapped knock-off retro superhero cape`,
+    do: $skill`Unleash the Devil's Kiss`,
+  },
+];
+
+export function yellowRayPossible(): boolean {
+  if (have($effect`Everything Looks Yellow`)) return false;
+  return yellowRaySources.find((s) => s.available()) !== undefined;
 }
