@@ -8,7 +8,7 @@ import { CombatStrategy } from "./combat";
 import { moodCompatible } from "./moods";
 import { Task } from "./task";
 import { globalStateCache } from "./state";
-import { yellowRaySources } from "./resources";
+import { forceItemSources, yellowRaySources } from "./resources";
 
 export enum OverridePriority {
   Wanderer = 20000,
@@ -19,11 +19,12 @@ export enum OverridePriority {
   Effect = 20,
   GoodOrb = 15,
   GoodYR = 10,
+  MinorEffect = 2,
   GoodGoose = 1,
   GoodBanish = 0.5,
   None = 0,
-  BadOrb = -2,
-  BadHoliday = 3,
+  BadOrb = -4,
+  BadHoliday = -10,
   BadYR = -16,
   BadGoose = -30,
   BadMood = -100,
@@ -46,7 +47,10 @@ export class Prioritization {
     if (base !== OverridePriority.None) result.priorities.add(base);
 
     // Prioritize getting a YR
-    if (task.combat?.can("yellowRay") && yellowRaySources.find((yr) => yr.available())) {
+    const yr_needed =
+      task.combat?.can("yellowRay") ||
+      (task.combat?.can("forceItems") && !forceItemSources.find((s) => s.available()));
+    if (yr_needed && yellowRaySources.find((yr) => yr.available())) {
       if (have($effect`Everything Looks Yellow`)) result.priorities.add(OverridePriority.BadYR);
       else result.priorities.add(OverridePriority.GoodYR);
     }
@@ -132,6 +136,7 @@ export class Prioritization {
       [OverridePriority.Effect, "Useful effect"],
       [OverridePriority.GoodOrb, this.orb_monster ? `Target ${this.orb_monster}` : `Target ?`],
       [OverridePriority.GoodYR, "Yellow ray"],
+      [OverridePriority.MinorEffect, "Useful minor effect"],
       [OverridePriority.GoodGoose, "Goose charged"],
       [OverridePriority.GoodBanish, "Banishes committed"],
       [OverridePriority.BadYR, "Too early for yellow ray"],

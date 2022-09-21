@@ -20,7 +20,7 @@ import { OutfitSpec, step } from "grimoire-kolmafia";
 import { OverridePriority } from "../engine/priority";
 import { CombatStrategy } from "../engine/combat";
 import { atLevel, debug } from "../lib";
-import { yellowRayPossible } from "../engine/resources";
+import { forceItemPossible, yellowRayPossible } from "../engine/resources";
 
 export function flyersDone(): boolean {
   return get("flyeredML") >= 10000;
@@ -388,10 +388,10 @@ export const WarQuest: Quest = {
         137: () => (have($item`filthy corduroys`) ? 1 : 2),
       },
       outfit: () => {
-        if (yellowRayPossible()) return { modifier: "+combat" };
+        if (forceItemPossible()) return { modifier: "+combat" };
         else return { modifier: "item" };
       },
-      combat: new CombatStrategy().yellowRay(),
+      combat: new CombatStrategy().forceItems(),
     },
     {
       name: "Outfit Frat",
@@ -404,7 +404,7 @@ export const WarQuest: Quest = {
       limit: { soft: 10 },
       choices: { 142: 3, 143: 3, 144: 3, 145: 1, 146: 3, 1433: 3 },
       outfit: () => {
-        if (yellowRayPossible())
+        if (forceItemPossible())
           return {
             equip: $items`filthy corduroys, filthy knitted dread sack`,
             modifier: "+combat",
@@ -412,7 +412,7 @@ export const WarQuest: Quest = {
         else
           return { equip: $items`filthy corduroys, filthy knitted dread sack`, modifier: "item" };
       },
-      combat: new CombatStrategy().yellowRay(),
+      combat: new CombatStrategy().forceItems(),
     },
     {
       name: "Enrage",
