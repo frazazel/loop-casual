@@ -493,7 +493,8 @@ export const MiscQuest: Quest = {
       completed: () =>
         !have($item`SongBoom™ BoomBox`) ||
         get("boomBoxSong") === "Food Vibrations" ||
-        get("_boomBoxSongsLeft") === 0,
+        get("_boomBoxSongsLeft") === 0 ||
+        !args.seasoning,
       do: () => cliExecute("boombox food"),
       freeaction: true,
       limit: { tries: 2 },
