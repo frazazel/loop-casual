@@ -57,6 +57,7 @@ const ABoo: Task[] = [
         () => (numericModifier("Monster Level") < -45 ? new Macro() : new Macro().attack().repeat()) // Attack the ghost directly if ML is too high
       )
       .killItem(),
+    orbtargets: () => [],
     choices: { 611: 1, 1430: 1 },
     limit: { soft: 15 },
   },
@@ -275,6 +276,7 @@ const Twin: Task[] = [
       use($item`rusty hedge trimmers`);
     },
     choices: { 606: 4, 610: 1, 1056: 1 },
+    outfit: { modifier: "init 40 min" },
     limit: { tries: 1 },
   },
 ];
@@ -303,7 +305,7 @@ export const ChasmQuest: Quest = {
           have($skill`Cooling Tubules`) ||
           have($skill`Snow-Cooling System`)) &&
           get("smutOrcNoncombatProgress") < 15) ||
-        ((have($effect`Red Door Syndrome`) || myMeat() >= 1000) && myBasestat($stat`Moxie`) >= 400),
+        ((have($effect`Red Door Syndrome`) || myMeat() >= 1000) && myBasestat($stat`Moxie`) >= 350),
       completed: () => step("questL09Topping") >= 1,
       prepare: () => {
         if (get("smutOrcNoncombatProgress") >= 15 && step("questL11Black") >= 2) {

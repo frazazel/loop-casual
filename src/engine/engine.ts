@@ -232,7 +232,10 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
         throw `Wanderer equipment ${wanderer.equip} conflicts with ${task.name}`;
     }
 
-    if (task.freeaction) {
+    if (
+      (typeof task.freeaction === "boolean" && task.freeaction) ||
+      (typeof task.freeaction === "function" && task.freeaction())
+    ) {
       // Prepare only as requested by the task
       return;
     }
@@ -282,7 +285,12 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
         debug(`Target: ${monster.name}`, "purple");
       }
       const strategy = combat.currentStrategy(monster);
-      if (strategy === "ignore" || strategy === "banish" || strategy === "ignoreNoBanish") {
+      if (
+        strategy === "ignore" ||
+        strategy === "banish" ||
+        strategy === "ignoreNoBanish" ||
+        strategy === "ignoreSoftBanish"
+      ) {
         combat.action("kill", monster); // TODO: KillBanish for Banish, KillNoBanish for IgnoreNoBanish
       }
     }
@@ -329,9 +337,14 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
 
       // Set up a runaway if there are combats we do not care about
       let runaway = undefined;
-      if (combat.can("ignore") && familiarWeight($familiar`Grey Goose`) >= 6 && myLevel() >= 11) {
+      if (
+        (combat.can("ignore") || combat.can("ignoreSoftBanish")) &&
+        familiarWeight($familiar`Grey Goose`) >= 6 &&
+        myLevel() >= 11
+      ) {
         runaway = equipFirst(outfit, runawaySources);
         resources.provide("ignore", runaway);
+        resources.provide("ignoreSoftBanish", runaway);
       }
       if (
         combat.can("ignoreNoBanish") &&
@@ -432,13 +445,18 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       print(`Equipped: ${equipped.join(", ")}`);
     }
 
-    // HP/MP upkeep
-    // HP/MP upkeep
-    if (!task.freeaction) {
-      if (myHp() < 50 && myHp() < myMaxhp()) restoreHp(myMaxhp() < 50 ? myMaxhp() : 50);
-      if (myMp() < 40 && myMaxmp() >= 40) customRestoreMp(40);
-      else if (myMp() < 20) customRestoreMp(20);
+    if (
+      (typeof task.freeaction === "boolean" && task.freeaction) ||
+      (typeof task.freeaction === "function" && task.freeaction())
+    ) {
+      // Prepare only as requested by the task
+      return;
     }
+
+    // HP/MP upkeep
+    if (myHp() < 50 && myHp() < myMaxhp()) restoreHp(myMaxhp() < 50 ? myMaxhp() : 50);
+    if (myMp() < 40 && myMaxmp() >= 40) customRestoreMp(40);
+    else if (myMp() < 20) customRestoreMp(20);
   }
 
   setChoices(task: ActiveTask, manager: PropertiesManager): void {

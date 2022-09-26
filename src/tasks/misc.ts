@@ -135,6 +135,7 @@ export const MiscQuest: Quest = {
         set("_loopcasual_checkedGnome", true);
       },
       outfit: { familiar: $familiar`Reagnimated Gnome` },
+      freeaction: true,
       limit: { tries: 1 },
     },
     {
@@ -368,6 +369,7 @@ export const MiscQuest: Quest = {
       name: "Acquire Firework Hat",
       after: [],
       priority: () => OverridePriority.Free,
+      ready: () => myMeat() >= 500,
       completed: () =>
         have($item`sombrero-mounted sparkler`) ||
         get("_fireworksShopHatBought") ||

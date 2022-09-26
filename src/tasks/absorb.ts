@@ -733,7 +733,7 @@ const usefulSkills = new Map<Skill, Monster>([
 ]);
 const usefulMonsters = new Set<Monster>([...reprocessTargets, ...usefulSkills.values()]);
 
-function monstersAt(location: Location): Monster[] {
+export function monstersAt(location: Location): Monster[] {
   const result = Object.entries(appearanceRates(location))
     .filter((i) => i[1] !== -2) // Avoid impossible monsters
     .map((i) => Monster.get(i[0]));
@@ -833,6 +833,9 @@ export class AbsorbState {
       ignored_skills.delete($skill`Snow-Cooling System`);
     }
 
+    // Sweatpants are enough MP regen
+    if (have($item`designer sweatpants`)) ignored_skills.add($skill`Hivemindedness`);
+
     for (const skill of ignored_skills) {
       const monster = usefulSkills.get(skill);
       this.ignoredSkills.add(skill);
@@ -916,7 +919,7 @@ export const AbsorbQuest: Quest = {
         completed: () => !globalStateCache.absorb().hasTargets(task.do),
         ...task,
         after: task.skill ? [...(task.after ?? []), task.skill.name] : task.after,
-        combat: (task.combat ?? new CombatStrategy()).ignore(), // killing targetting monsters is set in the engine
+        combat: (task.combat ?? new CombatStrategy()).ignoreSoftBanish(), // killing targetting monsters is set in the engine
         limit: { soft: 25 },
       };
       if (result.outfit === undefined) result.outfit = { equip: $items`miniature crystal ball` };
@@ -929,7 +932,7 @@ export const AbsorbQuest: Quest = {
           name: task.skill?.name ?? "",
           completed: () => globalStateCache.absorb().skillCompleted(task.skill ?? $skill`none`),
           ...task,
-          combat: (task.combat ?? new CombatStrategy()).ignore(), // killing targetting monsters is set in the engine
+          combat: (task.combat ?? new CombatStrategy()).ignoreSoftBanish(), // killing targetting monsters is set in the engine
           limit: { soft: 25 },
         };
         if (result.outfit === undefined) result.outfit = { equip: $items`miniature crystal ball` };
@@ -962,7 +965,7 @@ export const ReprocessQuest: Quest = {
         after: [...(task.after ?? []), `Absorb/${task.do.toString()}`],
         ready: () =>
           (task.ready === undefined || task.ready()) && familiarWeight($familiar`Grey Goose`) >= 6,
-        combat: (task.combat ?? new CombatStrategy()).ignore(), // killing targetting monsters is set in the engine
+        combat: (task.combat ?? new CombatStrategy()).ignoreSoftBanish(), // killing targetting monsters is set in the engine
         limit: { soft: 25 },
       };
       if (result.outfit === undefined) result.outfit = { equip: $items`miniature crystal ball` };
