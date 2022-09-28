@@ -3,6 +3,7 @@ import {
   cliExecute,
   Familiar,
   getFuel,
+  getWorkshed,
   Item,
   itemAmount,
   Location,
@@ -12,8 +13,10 @@ import {
   myTurncount,
   retrieveItem,
   Skill,
+  toInt,
   totalTurnsPlayed,
   use,
+  visitUrl,
 } from "kolmafia";
 import {
   $effect,
@@ -328,18 +331,30 @@ export const freekillSources: FreekillSource[] = [
  * Actually fuel the asdon to the required amount.
  */
 export function asdonFillTo(amount: number): boolean {
+  if (getWorkshed() !== $item`Asdon Martin keyfob`) return false;
+
+  const remaining = amount - getFuel();
+  const count = Math.ceil(remaining / 5) + 1; // 5 is minimum adv gain from loaf of soda bread, +1 buffer
   if (!have($item`bugbear bungguard`) || !have($item`bugbear beanie`)) {
     // Prepare enough wad of dough from all-purpose flower
     // We must do this ourselves since retrieveItem($item`loaf of soda bread`)
     // in libram will not consider all-purpose flower
-    const remaining = amount - getFuel();
-    const count = Math.ceil(remaining / 5) + 1; // 5 is minimum adv gain from loaf of soda bread, +1 buffer
     if (itemAmount($item`wad of dough`) < count) {
       buy($item`all-purpose flower`);
       use($item`all-purpose flower`);
     }
   }
-  return AsdonMartin.fillTo(amount);
+
+  retrieveItem(count, $item`loaf of soda bread`);
+  visitUrl(
+    `campground.php?action=fuelconvertor&pwd&qty=${count}&iid=${toInt(
+      $item`loaf of soda bread`
+    )}&go=Convert%21`
+  );
+  if (getFuel() < amount) {
+    throw new Error("Soda bread did not generate enough fuel");
+  }
+  return true;
 }
 
 /**
