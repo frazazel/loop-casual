@@ -4,7 +4,7 @@ import { Resource } from "./resources";
 import { Keys, keyStrategy } from "../tasks/keys";
 import { towerSkip } from "../tasks/level13";
 import { Outfit } from "grimoire-kolmafia";
-import { haveLoathingLegion } from "../lib";
+import { atLevel, haveLoathingLegion } from "../lib";
 
 export function equipFirst<T extends Resource>(outfit: Outfit, resources: T[]): T | undefined {
   for (const resource of resources) {
@@ -49,18 +49,19 @@ export function equipInitial(outfit: Outfit): void {
     outfit.equip($item`thermal blanket`);
 }
 
-export function equipCharging(outfit: Outfit): void {
+export function equipCharging(outfit: Outfit, force_charge_goose: boolean): void {
   if (outfit.skipDefaults) return;
 
   if (
     familiarWeight($familiar`Grey Goose`) < 6 ||
     (familiarWeight($familiar`Grey Goose`) >= 6 &&
       [...outfit.equips.values()].includes($item`Kramco Sausage-o-Matic™`) &&
-      getKramcoWandererChance() === 1)
+      getKramcoWandererChance() === 1) ||
+    force_charge_goose
   ) {
     if (outfit.equip($familiar`Grey Goose`)) {
       outfit.equip($item`yule hatchet`);
-      outfit.equip($item`teacher's pen`);
+      if (!atLevel(11)) outfit.equip($item`teacher's pen`);
 
       // Use latte mug for familiar exp
       if (
@@ -94,7 +95,7 @@ export function equipCharging(outfit: Outfit): void {
   }
 }
 
-export function equipDefaults(outfit: Outfit): void {
+export function equipDefaults(outfit: Outfit, force_charge_goose: boolean): void {
   if (outfit.skipDefaults) return;
 
   if (outfit.modifier?.includes("-combat")) outfit.equip($familiar`Disgeist`); // low priority
@@ -112,7 +113,11 @@ export function equipDefaults(outfit: Outfit): void {
   if (outfit.familiar === $familiar`Reagnimated Gnome`)
     outfit.equip($item`gnomish housemaid's kgnee`);
 
-  outfit.equip($item`mafia thumb ring`);
+  if (!outfit.modifier?.includes("meat") || !have($item`backup camera`)) {
+    // Leave room for backup camera for nuns
+    outfit.equip($item`mafia thumb ring`);
+  }
+  if (atLevel(11)) outfit.equip($item`lucky gold ring`);
 
   if (myBasestat($stat`moxie`) <= 200) {
     // Equip some extra equipment for early survivability
@@ -139,9 +144,12 @@ export function equipDefaults(outfit: Outfit): void {
     outfit.equip($item`square sponge pants`);
     outfit.equip($item`Cargo Cultist Shorts`);
     outfit.equip($item`lucky gold ring`);
-    outfit.equip($item`Powerful Glove`);
-    if (outfit.familiar === $familiar`Grey Goose` && familiarWeight($familiar`Grey Goose`) < 6)
+    if (
+      outfit.familiar === $familiar`Grey Goose` &&
+      (familiarWeight($familiar`Grey Goose`) < 6 || force_charge_goose)
+    )
       outfit.equip($item`teacher's pen`, $slot`acc3`);
+    outfit.equip($item`Powerful Glove`);
     outfit.equip($item`backup camera`);
     outfit.equip($item`birch battery`);
     outfit.equip($item`combat lover's locket`);
@@ -214,8 +222,10 @@ export function fixFoldables(outfit: Outfit) {
     } else if (outfit.modifier?.includes("ML") && !outfit.modifier.match("-[\\d .]*ML")) {
       if (get("parkaMode").toLowerCase() !== "spikolodon") cliExecute("parka spikolodon");
     } else if (
-      (outfit.modifier?.includes("init") && !outfit.modifier.match("-[\\d .]*init")) ||
-      outfit.modifier?.includes("-combat")
+      outfit.modifier?.includes("-combat") ||
+      (outfit.modifier?.includes("init") &&
+        !outfit.modifier.match("-[\\d .]*init") &&
+        !outfit.modifier.match("combat"))
     ) {
       if (get("parkaMode").toLowerCase() !== "pterodactyl") cliExecute("parka pterodactyl");
     } else {
