@@ -510,7 +510,7 @@ export const MiscQuest: Quest = {
         !have($item`SongBoom™ BoomBox`) ||
         get("boomBoxSong") === "Food Vibrations" ||
         get("_boomBoxSongsLeft") === 0 ||
-        !args.seasoning,
+        !args.minor.seasoning,
       do: () => cliExecute("boombox food"),
       freeaction: true,
       limit: { tries: 2 },
@@ -549,10 +549,12 @@ export const MiscQuest: Quest = {
             myMaxhp() - numericModifier("Maximum HP") >= 50 &&
             myMeat() >= 11000)),
       completed: () =>
-        !have($item`hewn moon-rune spoon`) || args.tune === undefined || get("moonTuned", false),
+        !have($item`hewn moon-rune spoon`) ||
+        args.major.tune === undefined ||
+        get("moonTuned", false),
       priority: () => OverridePriority.Free,
       freeaction: true,
-      do: () => cliExecute(`spoon ${args.tune}`),
+      do: () => cliExecute(`spoon ${args.major.tune}`),
       limit: { tries: 1 },
     },
     {
@@ -560,10 +562,12 @@ export const MiscQuest: Quest = {
       after: ["Reprocess/Outskirts of Camp Logging Camp"],
       ready: () => canadiaAvailable(),
       completed: () =>
-        !have($item`hewn moon-rune spoon`) || args.tune === undefined || get("moonTuned", false),
+        !have($item`hewn moon-rune spoon`) ||
+        args.major.tune === undefined ||
+        get("moonTuned", false),
       priority: () => OverridePriority.Free,
       freeaction: true,
-      do: () => cliExecute(`spoon ${args.tune}`),
+      do: () => cliExecute(`spoon ${args.major.tune}`),
       limit: { tries: 1 },
     },
     {
@@ -571,10 +575,12 @@ export const MiscQuest: Quest = {
       after: ["Reprocess/Thugnderdome", "Gnome Shirt", "Gnome Items"],
       ready: () => gnomadsAvailable(),
       completed: () =>
-        !have($item`hewn moon-rune spoon`) || args.tune === undefined || get("moonTuned", false),
+        !have($item`hewn moon-rune spoon`) ||
+        args.major.tune === undefined ||
+        get("moonTuned", false),
       priority: () => OverridePriority.Free,
       freeaction: true,
-      do: () => cliExecute(`spoon ${args.tune}`),
+      do: () => cliExecute(`spoon ${args.major.tune}`),
       limit: { tries: 1 },
     },
     {
@@ -582,7 +588,9 @@ export const MiscQuest: Quest = {
       after: ["Tune from Muscle", "Tune from Myst", "Tune from Moxie"],
       ready: () => false,
       completed: () =>
-        !have($item`hewn moon-rune spoon`) || args.tune === undefined || get("moonTuned", false),
+        !have($item`hewn moon-rune spoon`) ||
+        args.major.tune === undefined ||
+        get("moonTuned", false),
       do: () => false,
       limit: { tries: 1 },
     },
