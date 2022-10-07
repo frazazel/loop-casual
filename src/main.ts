@@ -70,6 +70,22 @@ export const args = Args.create(
         help: "If true, get special seasoning from SongBoom boombox after the beginning of the run.",
         default: true,
       }),
+      lgr: Args.flag({
+        help: "Pull a lucky gold ring. If pulled, it will be equipped during many combats.",
+        default: false,
+      }),
+      asdon: Args.flag({
+        help: "Pull an Asdon Martin keyfob. If pulled, it will be used to replace the cold medicine cabinet once all Extrovermectin™ have been obtained.",
+        default: false,
+      }),
+      jellies: Args.flag({
+        help: "Use your Space Jellyfish to get stench jellies during the war (this may reduce your goose familiar exp).",
+        default: false,
+      }),
+      pvp: Args.flag({
+        help: "Break your hippy stone at the start of the run.",
+        default: false,
+      }),
     }),
     debug: Args.group("Debug Options", {
       actions: Args.number({
@@ -89,6 +105,9 @@ export const args = Args.create(
       list: Args.flag({
         help: "Show the status of all tasks and exit.",
       }),
+      settings: Args.flag({
+        help: "Show the parsed value for all arguments and exit.",
+      }),
     }),
   },
   "Commands"
@@ -97,6 +116,10 @@ export function main(command?: string): void {
   sinceKolmafiaRevision(26718);
 
   Args.fill(args, command);
+  if (args.debug.settings) {
+    debug(JSON.stringify(args));
+    return;
+  }
   if (args.help) {
     Args.showHelp(args);
     return;
@@ -257,18 +280,17 @@ function breakPrism(into_class: number): void {
 function listTasks(engine: Engine): void {
   engine.updatePlan();
   for (const task of engine.tasks) {
-    const priority = Prioritization.from(task);
-    const reason = priority.explain();
-    const why = reason === "" ? "Route" : reason;
-    debug(
-      `${task.name}: ${
-        task.completed()
-          ? "Done"
-          : engine.available(task)
-          ? `Available [${priority.score()}: ${why}]`
-          : "Not Available"
-      }`,
-      task.completed() ? "blue" : engine.available(task) ? undefined : "red"
-    );
+    if (task.completed()) {
+      debug(`${task.name}: Done`, "blue");
+    } else {
+      if (engine.available(task)) {
+        const priority = Prioritization.from(task);
+        const reason = priority.explain();
+        const why = reason === "" ? "Route" : reason;
+        debug(`${task.name}: Available [${priority.score()}: ${why}`);
+      } else {
+        debug(`${task.name}: Not Available`, "red");
+      }
+    }
   }
 }
