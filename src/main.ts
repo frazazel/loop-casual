@@ -17,7 +17,7 @@ import { all_tasks } from "./tasks/all";
 import { prioritize } from "./route";
 import { Engine } from "./engine/engine";
 import { convertMilliseconds, debug } from "./lib";
-import { get, set, sinceKolmafiaRevision } from "libram";
+import { $path, get, set, sinceKolmafiaRevision } from "libram";
 import { Prioritization } from "./engine/priority";
 import { Args, step } from "grimoire-kolmafia";
 import { checkRequirements } from "./sim";
@@ -43,6 +43,7 @@ export const args = Args.create(
         [5, "Disco Bandit"],
         [6, "Accordion Thief"],
       ],
+      setting: "",
     }),
     major: Args.group("Major Options", {
       pulls: Args.number({
@@ -86,6 +87,10 @@ export const args = Args.create(
         help: "Break your hippy stone at the start of the run.",
         default: false,
       }),
+      wand: Args.flag({
+        help: "Always get the zap wand.",
+        default: false,
+      }),
     }),
     debug: Args.group("Debug Options", {
       actions: Args.number({
@@ -104,16 +109,18 @@ export const args = Args.create(
       }),
       list: Args.flag({
         help: "Show the status of all tasks and exit.",
+        setting: "",
       }),
       settings: Args.flag({
         help: "Show the parsed value for all arguments and exit.",
+        setting: "",
       }),
     }),
   },
   "Commands"
 );
 export function main(command?: string): void {
-  sinceKolmafiaRevision(26718);
+  sinceKolmafiaRevision(26821);
 
   Args.fill(args, command);
   if (args.debug.settings) {
@@ -133,7 +140,8 @@ export function main(command?: string): void {
   if (args.version) return;
 
   // eslint-disable-next-line eqeqeq
-  if (myPath() != "Grey You") throw `You are not currently in a Grey You run. Please start one.`;
+  if (myPath() !== $path`Grey You`)
+    throw `You are not currently in a Grey You run. Please start one.`;
 
   // Break the prism and exit if requested
   if (args.class !== undefined) {
@@ -225,7 +233,7 @@ function runComplete(): boolean {
   return (
     step("questL13Final") > 11 ||
     // eslint-disable-next-line eqeqeq
-    myPath() != "Grey You" ||
+    myPath() !== $path`Grey You` ||
     (args.major.delaytower && myTurncount() < 1000 && step("questL13Final") !== -1) ||
     (args.major.delaywar &&
       myTurncount() < 1000 &&
