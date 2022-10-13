@@ -1,4 +1,12 @@
-import { changeMcd, cliExecute, currentMcd, Item, myBasestat, visitUrl } from "kolmafia";
+import {
+  changeMcd,
+  cliExecute,
+  currentMcd,
+  Item,
+  myBasestat,
+  myTurncount,
+  visitUrl,
+} from "kolmafia";
 import {
   $item,
   $items,
@@ -7,12 +15,13 @@ import {
   $monsters,
   $skill,
   $stat,
+  AutumnAton,
   get,
   have,
   Macro,
 } from "libram";
 import { Quest, Task } from "../engine/task";
-import { OutfitSpec, step } from "grimoire-kolmafia";
+import { Guards, OutfitSpec, step } from "grimoire-kolmafia";
 import { CombatStrategy } from "../engine/combat";
 import { atLevel } from "../lib";
 import { OverridePriority } from "../engine/priority";
@@ -189,6 +198,12 @@ const Nook: Task[] = [
     name: "Nook",
     after: ["Start"],
     prepare: tuneCape,
+    priority: (): OverridePriority => {
+      if (AutumnAton.have()) {
+        if ($location`The Defiled Nook`.turnsSpent === 0) return OverridePriority.GoodAutumnaton;
+      }
+      return OverridePriority.None;
+    },
     ready: () => myBasestat($stat`Muscle`) >= 62,
     completed: () => get("cyrptNookEvilness") <= 25,
     do: $location`The Defiled Nook`,
@@ -202,12 +217,16 @@ const Nook: Task[] = [
     orbtargets: () => {
       if (globalStateCache.absorb().isReprocessTarget($monster`party skelteon`))
         return $monsters`party skelteon`;
+      if (AutumnAton.have() && myTurncount() < 400) return []; // ignore orb early on
       else return $monsters`spiny skelelton, toothy sklelton`;
     },
     combat: new CombatStrategy()
       .macro(slay_macro, $monsters`spiny skelelton, toothy sklelton`)
       .banish($monster`party skelteon`),
-    limit: { soft: 30 },
+    limit: {
+      soft: 30,
+      guard: Guards.after(() => !AutumnAton.have() || $location`The Defiled Nook`.turnsSpent > 0),
+    },
   },
   {
     name: "Nook Eye", // In case we get eyes from outside sources (Nostalgia)
@@ -221,7 +240,7 @@ const Nook: Task[] = [
       cliExecute("use * evil eye");
     },
     freeaction: true,
-    limit: { tries: 9 },
+    limit: { tries: 9, unready: true },
   },
   {
     name: "Nook Boss",

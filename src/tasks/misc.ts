@@ -25,6 +25,7 @@ import {
   mySign,
   myTurncount,
   numericModifier,
+  print,
   retrieveItem,
   runChoice,
   use,
@@ -42,6 +43,7 @@ import {
   $skill,
   $stat,
   AsdonMartin,
+  AutumnAton,
   ensureEffect,
   get,
   getSaleValue,
@@ -349,7 +351,7 @@ export const MiscQuest: Quest = {
           throw `Failed to kill ghost from protonic accelerator pack`;
         }
       },
-      limit: { tries: 20 },
+      limit: { tries: 20, unready: true },
     },
     {
       name: "Acquire Birch Battery",
@@ -514,7 +516,7 @@ export const MiscQuest: Quest = {
         !args.minor.seasoning,
       do: () => cliExecute("boombox food"),
       freeaction: true,
-      limit: { tries: 2 },
+      limit: { tries: 2, unready: true },
     },
     {
       name: "Gnome Shirt",
@@ -669,6 +671,57 @@ export const MiscQuest: Quest = {
         visitUrl("peevpee.php?place=fight");
       },
       limit: { tries: 1 },
+      freeaction: true,
+    },
+    {
+      name: "Autumnaton",
+      after: [],
+      priority: () => OverridePriority.Free,
+      ready: () => AutumnAton.available(),
+      completed: () => !AutumnAton.have(),
+      do: () => {
+        // Refresh upgrades
+        AutumnAton.upgrade();
+
+        const upgrades = AutumnAton.currentUpgrades();
+        const zones = [];
+        if (!upgrades.includes("leftleg1")) {
+          // Low underground locations
+          zones.push($location`Guano Junction`, $location`Cobb's Knob Harem`, $location`Noob Cave`);
+        }
+        if (!upgrades.includes("rightleg1")) {
+          // Mid indoor locations
+          zones.push(
+            $location`The Laugh Floor`,
+            $location`The Haunted Library`,
+            $location`The Haunted Kitchen`
+          );
+        }
+
+        if (!upgrades.includes("leftarm1")) {
+          // Low indoor locations
+          zones.push($location`The Haunted Pantry`);
+        }
+        if (!upgrades.includes("rightarm1")) {
+          // Mid outdoor locations
+          zones.push($location`The Smut Orc Logging Camp`, $location`The Goatlet`);
+        }
+
+        // Valuble quest locations
+        if (
+          itemAmount($item`barrel of gunpowder`) < 5 &&
+          get("sidequestLighthouseCompleted") === "none"
+        )
+          zones.push($location`Sonofa Beach`);
+
+        // Mid underground locations for autumn dollar
+        zones.push($location`The Defiled Nook`, $location`Cobb's Knob Menagerie, Level 3`);
+
+        zones.push($location`The Sleazy Back Alley`); // always send it somewhere
+        const result = AutumnAton.sendTo(zones);
+        if (result) print(`Autumnaton sent to ${result}`);
+      },
+      limit: { tries: 15, unready: true },
       freeaction: true,
     },
   ],

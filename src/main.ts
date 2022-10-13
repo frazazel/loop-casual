@@ -61,9 +61,9 @@ export const args = Args.create(
         help: "Delay the war until after ronin ends, then finish with stuffing fluffers.",
         default: false,
       }),
-      chargegoose: Args.boolean({
-        help: "If true, use extra familiar turns to charge your Grey Goose at the end of the run (for aftercore leveling).",
-        default: true,
+      chargegoose: Args.number({
+        help: "If true, use extra familiar turns to charge your Grey Goose to this weight at the end of the run (for aftercore leveling). If you do not have enough extra familiar turns, the goose may be lower level.",
+        default: 20,
       }),
     }),
     minor: Args.group("Minor Options", {
@@ -124,7 +124,7 @@ export const args = Args.create(
   "Commands"
 );
 export function main(command?: string): void {
-  sinceKolmafiaRevision(26821);
+  sinceKolmafiaRevision(26834);
 
   Args.fill(args, command);
   if (args.debug.settings) {
@@ -299,7 +299,7 @@ function listTasks(engine: Engine): void {
         const priority = Prioritization.from(task);
         const reason = priority.explain();
         const why = reason === "" ? "Route" : reason;
-        debug(`${task.name}: Available [${priority.score()}: ${why}`);
+        debug(`${task.name}: Available [${priority.score()}: ${why}]`);
       } else {
         debug(`${task.name}: Not Available`, "red");
       }

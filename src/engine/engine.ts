@@ -202,7 +202,7 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
     const reason = task.active_priority?.explain() ?? "";
     const why = reason === "" ? "Route" : reason;
     debug(`Executing ${task.name} [${why}]`, "blue");
-    this.checkLimits(task);
+    this.checkLimits({ ...task, limit: { ...task.limit, unready: false } }, () => true); // ignore unready for this initial check
     super.execute(task);
 
     if (task.completed()) {
@@ -216,7 +216,6 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       } else {
         debug(`${task.name} not completed!`, "blue");
       }
-      this.checkLimits(task); // Error if too many tries occur
     }
   }
 
@@ -405,7 +404,7 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       }
     }
 
-    if (args.major.chargegoose) {
+    if (args.major.chargegoose > familiarWeight($familiar`Grey Goose`)) {
       // If all the remaining monsters are summonable, then either we are about
       // to summon one (and so we want to charge the goose during that fight)
       // or all remaining summons are inaccesible (and so it is time to
@@ -413,10 +412,7 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       const summonedMonsters = new Set<Monster>(
         extraReprocessTargets.filter((t) => t.needed()).map((t) => t.target)
       );
-      if (
-        familiarWeight($familiar`Grey Goose`) < 20 &&
-        absorb_state.remainingReprocess().find((m) => !summonedMonsters.has(m)) === undefined
-      ) {
+      if (absorb_state.remainingReprocess().find((m) => !summonedMonsters.has(m)) === undefined) {
         force_charge_goose = true;
       }
     }
@@ -482,7 +478,7 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       outfit.dress({ forceUpdate: true });
     }
     fixFoldables(outfit);
-    applyEffects(outfit.modifier ?? "", task.effects || []);
+    applyEffects(outfit.modifier ?? "");
 
     if (args.debug.verboseequip) {
       const equipped = [...new Set(Slot.all().map((slot) => equippedItem(slot)))];
