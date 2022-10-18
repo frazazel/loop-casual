@@ -291,7 +291,7 @@ const familiarGear = [
   ...(familiarPants ? [familiarPants] : []),
 ];
 const familiarGearBonus =
-  5 + sum(familiarGear, (item: Item) => getModifier("Familiar Weight", item));
+  10 + sum(familiarGear, (item: Item) => getModifier("Familiar Weight", item));
 const familiarEffectBonus = 15;
 const runawayFamiliar = have($familiar`Frumious Bandersnatch`)
   ? $familiar`Frumious Bandersnatch`
@@ -346,7 +346,7 @@ export const runawaySources: RunawaySource[] = [
     available: () =>
       runawayFamiliar !== $familiar`none` &&
       have(runawayFamiliar) &&
-      availableFamiliarRunaways(5) > get("_banderRunaways"), // 5 from iFlail
+      availableFamiliarRunaways(10) > get("_banderRunaways"), // 10 from weapon
     prepare: (): void => {
       if (
         floor((familiarWeight(runawayFamiliar) + weightAdjustment()) / 5) <= get("_banderRunaways")
@@ -357,7 +357,7 @@ export const runawaySources: RunawaySource[] = [
         ensureEffect($effect`Ode to Booze`, 5);
       }
     },
-    equip: [runawayFamiliar, ...familiarGear, $item`iFlail`],
+    equip: [runawayFamiliar, ...familiarGear, $item`Fourth of May Cosplay Saber`],
     do: new Macro().runaway(),
     chance: () => 1,
     banishes: false,
@@ -367,7 +367,7 @@ export const runawaySources: RunawaySource[] = [
     available: () =>
       runawayFamiliar !== $familiar`none` &&
       have(runawayFamiliar) &&
-      availableFamiliarRunaways(10) > get("_banderRunaways"), // 10 from iFlails
+      availableFamiliarRunaways(15) > get("_banderRunaways"), // 15 from weapon/offhand
     prepare: (): void => {
       if (
         floor((familiarWeight(runawayFamiliar) + weightAdjustment()) / 5) <= get("_banderRunaways")
@@ -378,7 +378,7 @@ export const runawaySources: RunawaySource[] = [
         ensureEffect($effect`Ode to Booze`, 5);
       }
     },
-    equip: [runawayFamiliar, ...familiarGear, $item`iFlail`, $item`iFlail`],
+    equip: [runawayFamiliar, ...familiarGear, $item`Fourth of May Cosplay Saber`, $item`familiar scrapbook`],
     do: new Macro().runaway(),
     chance: () => 1,
     banishes: false,
