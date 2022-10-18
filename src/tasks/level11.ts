@@ -1,4 +1,13 @@
-import { buy, cliExecute, itemAmount, myLevel, runChoice, use, visitUrl } from "kolmafia";
+import {
+  buy,
+  cliExecute,
+  haveEquipped,
+  itemAmount,
+  myLevel,
+  runChoice,
+  use,
+  visitUrl,
+} from "kolmafia";
 import {
   $coinmaster,
   $effect,
@@ -12,8 +21,9 @@ import {
   have,
   Macro,
 } from "libram";
-import { OutfitSpec, Quest, step, Task } from "./structure";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { CombatStrategy } from "../engine/combat";
+import { OutfitSpec, step } from "grimoire-kolmafia";
 
 const Diary: Task[] = [
   {
@@ -25,7 +35,7 @@ const Diary: Task[] = [
     outfit: {
       equip: $items`blackberry galoshes`,
       familiar: $familiar`Reassembled Blackbird`,
-      modifier: "+combat 5min",
+      modifier: "+combat",
     },
     choices: { 923: 1, 924: 1 },
     combat: new CombatStrategy().ignore($monster`blackberry bush`).kill(),
@@ -100,7 +110,7 @@ const Desert: Task[] = [
     },
     combat: new CombatStrategy()
       .macro((): Macro => {
-        if (have($effect`Ultrahydrated`))
+        if (have($effect`Ultrahydrated`) && !haveEquipped($item`"I Voted!" sticker`))
           return new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`);
         else return new Macro();
       })
@@ -203,7 +213,8 @@ const Pyramid: Task[] = [
     after: ["Use Bomb"],
     completed: () => step("questL11Pyramid") === 999,
     do: () => visitUrl("place.php?whichplace=pyramid&action=pyramid_state1a"),
-    combat: new CombatStrategy(true)
+    boss: true,
+    combat: new CombatStrategy()
       .macro(
         new Macro()
           .trySkill($skill`Saucegeyser`)

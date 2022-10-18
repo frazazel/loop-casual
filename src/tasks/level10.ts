@@ -1,7 +1,9 @@
 import { cliExecute, containsText, myLevel, use, visitUrl } from "kolmafia";
 import { $effect, $item, $items, $location, $monster, have } from "libram";
-import { CombatStrategy } from "../combat";
-import { Quest, step } from "./structure";
+import { CombatStrategy } from "../engine/combat";
+import { Quest } from "../engine/task";
+import { step } from "grimoire-kolmafia";
+import { shenItem } from "./level11_palindome";
 
 export const GiantQuest: Quest = {
   name: "Giant",
@@ -77,8 +79,19 @@ export const GiantQuest: Quest = {
       completed: () => step("questL10Garbage") >= 10,
       do: $location`The Castle in the Clouds in the Sky (Top Floor)`,
       outfit: { equip: $items`Mohawk wig`, modifier: "-combat" },
-      combat: new CombatStrategy().kill($monster`Burning Snake of Fire`),
+      combat: new CombatStrategy().killHard($monster`Burning Snake of Fire`),
       choices: { 675: 4, 676: 4, 677: 4, 678: 1, 679: 1, 1431: 4 },
+      limit: { soft: 20 },
+    },
+    {
+      name: "Unlock HITS",
+      after: ["Top Floor"],
+      ready: () => shenItem($item`The Eye of the Stars`),
+      completed: () => have($item`steam-powered model rocketship`),
+      do: $location`The Castle in the Clouds in the Sky (Top Floor)`,
+      outfit: { modifier: "-combat" },
+      combat: new CombatStrategy().killHard($monster`Burning Snake of Fire`),
+      choices: { 675: 4, 676: 4, 677: 2, 678: 3, 679: 1, 1431: 4 },
       limit: { soft: 20 },
     },
     {

@@ -14,10 +14,11 @@ import {
   Macro,
   uneffect,
 } from "libram";
-import { Quest, step, Task } from "./structure";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { CombatStrategy } from "../engine/combat";
+import { step } from "grimoire-kolmafia";
 
-function shenItem(item: Item) {
+export function shenItem(item: Item) {
   return (
     get("shenQuestItem") === item.name &&
     (step("questL11Shen") === 1 || step("questL11Shen") === 3 || step("questL11Shen") === 5)
@@ -89,6 +90,46 @@ const Copperhead: Task[] = [
     limit: { soft: 10 },
     delay: 5,
   },
+  {
+    name: "Sleaze Star Snake",
+    after: ["Copperhead Start", "Giant/Unlock HITS"],
+    ready: () => shenItem($item`The Eye of the Stars`),
+    completed: () => step("questL11Shen") === 999 || have($item`The Eye of the Stars`),
+    do: $location`The Hole in the Sky`,
+    combat: new CombatStrategy().killHard($monster`The Snake With Like Ten Heads`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
+  {
+    name: "Sleaze Frat Snake",
+    after: ["Copperhead Start"],
+    ready: () => shenItem($item`The Lacrosse Stick of Lacoronado`),
+    completed: () => step("questL11Shen") === 999 || have($item`The Lacrosse Stick of Lacoronado`),
+    do: $location`The Smut Orc Logging Camp`,
+    combat: new CombatStrategy().killHard($monster`The Frattlesnake`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
+  {
+    name: "Spooky Snake Precrypt",
+    after: ["Copperhead Start"],
+    ready: () => shenItem($item`The Shield of Brook`) && step("questL07Cyrptic") < 999,
+    completed: () => step("questL11Shen") === 999 || have($item`The Shield of Brook`),
+    do: $location`The Unquiet Garves`,
+    combat: new CombatStrategy().killHard($monster`Snakeleton`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
+  {
+    name: "Spooky Snake Postcrypt",
+    after: ["Copperhead Start"],
+    ready: () => shenItem($item`The Shield of Brook`) && step("questL07Cyrptic") === 999,
+    completed: () => step("questL11Shen") === 999 || have($item`The Shield of Brook`),
+    do: $location`The VERY Unquiet Garves`,
+    combat: new CombatStrategy().killHard($monster`Snakeleton`),
+    limit: { soft: 10 },
+    delay: 5,
+  },
 ];
 
 const Zepplin: Task[] = [
@@ -110,7 +151,6 @@ const Zepplin: Task[] = [
     prepare: (): void => {
       if (get("zeppelinProtestors") < 80) {
         if (have($skill`Bend Hell`) && !get("_bendHellUsed")) ensureEffect($effect`Bendin' Hell`);
-        ensureEffect($effect`Dirty Pear`);
         use($item`11-leaf clover`);
       }
     },
@@ -119,7 +159,7 @@ const Zepplin: Task[] = [
     choices: { 856: 1, 857: 1, 858: 1, 866: 2, 1432: 1 },
     outfit: { modifier: "sleaze dmg, sleaze spell dmg", familiar: $familiar`Left-Hand Man` },
     freeaction: true, // fully maximize outfit
-    limit: { tries: 3, message: "Maybe your available sleaze damage is too low." },
+    limit: { tries: 5, message: "Maybe your available sleaze damage is too low." },
   },
   {
     name: "Protesters Finish",
@@ -145,9 +185,9 @@ const Zepplin: Task[] = [
       .macro((): Macro => {
         if (get("_glarkCableUses") < 5) return new Macro().tryItem($item`glark cable`);
         else return new Macro();
-      }, ...$monsters`man with the red buttons, red skeleton, red butler, Red Fox`)
-      .banish(...$monsters`Red Herring, Red Snapper`)
-      .kill(...$monsters`man with the red buttons, red skeleton, red butler, Red Fox`),
+      }, $monsters`man with the red buttons, red skeleton, red butler, Red Fox`)
+      .banish($monsters`Red Herring, Red Snapper`)
+      .kill($monsters`man with the red buttons, red skeleton, red butler, Red Fox`),
     limit: { soft: 12 },
   },
 ];
@@ -176,12 +216,12 @@ const Dome: Task[] = [
     do: $location`Inside the Palindome`,
     outfit: { equip: $items`Talisman o' Namsilat`, modifier: "-combat" },
     combat: new CombatStrategy()
-      .banish(...$monsters`Evil Olive, Flock of Stab-bats, Taco Cat, Tan Gnat`)
+      .banish($monsters`Evil Olive, Flock of Stab-bats, Taco Cat, Tan Gnat`)
       .macro(
         new Macro().item($item`disposable instant camera`),
-        ...$monsters`Bob Racecar, Racecar Bob`
+        $monsters`Bob Racecar, Racecar Bob`
       )
-      .kill(...$monsters`Bob Racecar, Racecar Bob, Drab Bard, Remarkable Elba Kramer`),
+      .kill($monsters`Bob Racecar, Racecar Bob, Drab Bard, Remarkable Elba Kramer`),
     limit: { soft: 20 },
   },
   {
@@ -191,8 +231,8 @@ const Dome: Task[] = [
     do: $location`Inside the Palindome`,
     outfit: { equip: $items`Talisman o' Namsilat`, modifier: "-combat" },
     combat: new CombatStrategy()
-      .banish(...$monsters`Evil Olive, Flock of Stab-bats, Taco Cat, Tan Gnat`)
-      .kill(...$monsters`Bob Racecar, Racecar Bob, Drab Bard, Remarkable Elba Kramer`),
+      .banish($monsters`Evil Olive, Flock of Stab-bats, Taco Cat, Tan Gnat`)
+      .kill($monsters`Bob Racecar, Racecar Bob, Drab Bard, Remarkable Elba Kramer`),
     limit: { soft: 20 },
   },
   {
@@ -256,7 +296,8 @@ export const PalindomeQuest: Quest = {
       },
       outfit: { equip: $items`Talisman o' Namsilat, Mega Gem` },
       choices: { 131: 1 },
-      combat: new CombatStrategy(true).kill(),
+      boss: true,
+      combat: new CombatStrategy().kill(),
       limit: { tries: 1 },
     },
   ],

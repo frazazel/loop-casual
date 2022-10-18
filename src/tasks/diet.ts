@@ -33,15 +33,19 @@ import {
   $items,
   $skill,
   $slot,
+  clamp,
   Diet,
   get,
   getAverageAdventures,
+  getRemainingLiver,
+  getRemainingSpleen,
+  getRemainingStomach,
   have,
   MenuItem,
   sumNumbers,
 } from "libram";
 import { args } from "../main";
-import { Quest } from "./structure";
+import { Quest } from "../engine/task";
 
 export const DietQuest: Quest = {
   name: "Diet",
@@ -89,7 +93,7 @@ export const DietQuest: Quest = {
       do: (): void => {
         cliExecute("numberology 69");
       },
-      limit: { tries: 4 },
+      limit: { tries: 5 },
       freeaction: true,
       noadventures: true,
     },
@@ -189,10 +193,14 @@ function chewSafe(qty: number, item: Item) {
   if (!chew(qty, item)) throw "Failed to chew safely";
 }
 
+type MenuData = {
+  turns: number; // Est. number of turns provided by an item; used for the price cap
+};
 function consumeSafe(
   qty: number,
   item: Item,
   mpa: number,
+  data?: MenuData,
   additionalValue?: number,
   skipAcquire?: boolean
 ) {
@@ -200,8 +208,7 @@ function consumeSafe(
   if (spleenCleaned && mySpleenUse() < spleenCleaned) {
     throw "No spleen to clear with this.";
   }
-  // Treat special seasoning as providing 1 adv for the purpose of a price cap.
-  const averageAdventures = item === $item`Special Seasoning` ? 1 : getAverageAdventures(item);
+  const averageAdventures = data?.turns ?? getAverageAdventures(item);
   if (!skipAcquire && (averageAdventures > 0 || additionalValue)) {
     const cap = Math.max(0, averageAdventures * mpa) + (additionalValue ?? 0);
     acquire(qty, item, cap);
@@ -211,7 +218,7 @@ function consumeSafe(
   if (itemType(item) === "food") eatSafe(qty, item, mpa);
   else if (itemType(item) === "booze") drinkSafe(qty, item);
   else if (itemType(item) === "spleen item") chewSafe(qty, item);
-  else use(qty, item);
+  else if (item !== $item`Special Seasoning`) use(qty, item);
 }
 
 // Item priority - higher means we eat it first.
@@ -233,7 +240,7 @@ function itemPriority<T>(menuItems: MenuItem<T>[]) {
   }
 }
 
-function menu() {
+function menu(): MenuItem<MenuData>[] {
   const spaghettiBreakfast =
     have($item`spaghetti breakfast`) &&
     myFullness() === 0 &&
@@ -283,10 +290,14 @@ function menu() {
     new MenuItem($item`blood-drive sticker`),
 
     // HELPERS
-    new MenuItem($item`Special Seasoning`),
-    new MenuItem($item`pocket wish`, { maximum: 1, effect: $effect`Refined Palate` }),
-    new MenuItem($item`toasted brie`, { maximum: 1 }),
-    new MenuItem($item`potion of the field gar`, { maximum: 1 }),
+    new MenuItem($item`Special Seasoning`, { data: { turns: 1 } }),
+    new MenuItem($item`pocket wish`, {
+      maximum: 1,
+      effect: $effect`Refined Palate`,
+      data: { turns: 10 },
+    }),
+    new MenuItem($item`toasted brie`, { maximum: 1, data: { turns: 10 } }),
+    new MenuItem($item`potion of the field gar`, { maximum: 1, data: { turns: 5 } }),
   ];
 }
 
@@ -294,32 +305,56 @@ function shotglassMenu() {
   return menu().filter((menuItem) => menuItem.size === 1 && menuItem.organ === "booze");
 }
 
-function consumeDiet<T>(diet: Diet<T>, mpa: number) {
+function consumeDiet(diet: Diet<MenuData>, mpa: number) {
   const plannedDietEntries = diet.entries.sort(
     (a, b) => itemPriority(b.menuItems) - itemPriority(a.menuItems)
   );
 
+  print(`Diet Plan:`);
   for (const dietEntry of plannedDietEntries) {
     print(`${dietEntry.target()} ${dietEntry.helpers().join(",")}`);
   }
 
   while (sumNumbers(plannedDietEntries.map((e) => e.quantity)) > 0) {
+    let progressed = false;
     for (const dietEntry of plannedDietEntries) {
       let quantity = dietEntry.quantity;
+
+      // Compute the usable quantity of the diet entry
+      const organ = dietEntry.target().organ ?? itemType(dietEntry.target().item);
+      if (organ === "food") {
+        quantity = clamp(Math.floor(getRemainingStomach() / dietEntry.target().size), 0, quantity);
+      } else if (organ === "booze") {
+        quantity = clamp(Math.floor(getRemainingLiver() / dietEntry.target().size), 0, quantity);
+        if (
+          dietEntry.target().size === 1 &&
+          !get("_mimeArmyShotglassUsed") &&
+          have($item`mime army shotglass`) &&
+          quantity === 0
+        ) {
+          quantity = 1;
+        }
+      } else if (organ === "spleen item") {
+        quantity = clamp(Math.floor(getRemainingSpleen() / dietEntry.target().size), 0, quantity);
+      }
       const clean = spleenCleaners.get(dietEntry.target().item);
       if (clean) {
-        quantity = Math.floor(mySpleenUse() / clean);
+        quantity = clamp(Math.floor(mySpleenUse() / clean), 0, quantity);
       }
+
       if (quantity > 0) {
+        progressed = true;
         for (const menuItem of dietEntry.menuItems) {
           if (menuItem.effect === $effect`Refined Palate`) {
             cliExecute(`genie effect ${menuItem.effect}`);
           } else {
-            consumeSafe(dietEntry.quantity, menuItem.item, mpa);
+            consumeSafe(dietEntry.quantity, menuItem.item, mpa, menuItem.data);
           }
         }
         dietEntry.quantity -= quantity;
       }
     }
+
+    if (!progressed) throw `Unable to determine what to consume next`;
   }
 }

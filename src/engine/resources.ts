@@ -1,3 +1,4 @@
+import { OutfitSpec } from "grimoire-kolmafia";
 import {
   buy,
   cliExecute,
@@ -33,13 +34,13 @@ import {
   Macro,
   sum,
 } from "libram";
-import { debug } from "./lib";
+import { debug } from "../lib";
 
 export interface Resource {
   name: string;
   available: () => boolean;
   prepare?: () => void;
-  equip?: Item | Familiar | (Item | Familiar)[];
+  equip?: Item | Familiar | Item[] | OutfitSpec;
   chance?: () => number;
 }
 
@@ -137,6 +138,15 @@ export const banishSources: BanishSource[] = [
     available: () => true,
     do: $item`divine champagne popper`,
   },
+  // Turn-taking banishes: lowest priority
+  {
+    name: "Crystal Skull",
+    prepare: () => {
+      retrieveItem($item`crystal skull`);
+    },
+    available: () => true,
+    do: $item`crystal skull`,
+  },
 ];
 
 export function unusedBanishes(to_banish: Monster[]): BanishSource[] {
@@ -146,10 +156,11 @@ export function unusedBanishes(to_banish: Monster[]): BanishSource[] {
   );
 
   // Record monsters that still need to be banished, and the banishes used
+  const not_yet_banished: Monster[] = [];
   to_banish.forEach((monster) => {
     const banished_with = already_banished.get(monster);
     if (banished_with === undefined) {
-      to_banish.push(monster);
+      not_yet_banished.push(monster);
     } else {
       used_banishes.add(banished_with);
       // Map strange banish tracking to our resources
@@ -159,15 +170,15 @@ export function unusedBanishes(to_banish: Monster[]): BanishSource[] {
         used_banishes.add($skill`Reflex Hammer`);
     }
   });
-  if (to_banish.length === 0) return []; // All monsters banished.
+  if (not_yet_banished.length === 0) return []; // All monsters banished.
 
-  debug(`Banish targets: ${to_banish.join(", ")}`);
+  debug(`Banish targets: ${not_yet_banished.join(", ")}`);
   debug(`Banishes used: ${Array.from(used_banishes).join(", ")}`);
   return banishSources.filter((banish) => banish.available() && !used_banishes.has(banish.do));
 }
 
 export interface WandererSource extends Resource {
-  monster: Monster | string;
+  monsters: Monster[];
   chance: () => number;
   macro?: Macro;
 }
@@ -183,8 +194,13 @@ export const wandererSources: WandererSource[] = [
       myLevel() >= 10 &&
       have($item`mutant legs`),
     equip: $items`"I Voted!" sticker, mutant legs`,
-    monster:
-      "monsterid 2094 || monsterid 2095 || monsterid 2096 || monsterid 2097 || monsterid 2098",
+    monsters: [
+      $monster`government bureaucrat`,
+      $monster`terrible mutant`,
+      $monster`angry ghost`,
+      $monster`annoyed snake`,
+      $monster`slime blob`,
+    ],
     chance: () => 1, // when available
   },
   {
@@ -197,8 +213,13 @@ export const wandererSources: WandererSource[] = [
       myLevel() >= 10 &&
       have($item`mutant arm`),
     equip: $items`"I Voted!" sticker, mutant arm`,
-    monster:
-      "monsterid 2094 || monsterid 2095 || monsterid 2096 || monsterid 2097 || monsterid 2098",
+    monsters: [
+      $monster`government bureaucrat`,
+      $monster`terrible mutant`,
+      $monster`angry ghost`,
+      $monster`annoyed snake`,
+      $monster`slime blob`,
+    ],
     chance: () => 1, // when available
   },
   {
@@ -210,8 +231,13 @@ export const wandererSources: WandererSource[] = [
       get("_voteFreeFights") < 3 &&
       myLevel() >= 10,
     equip: $item`"I Voted!" sticker`,
-    monster:
-      "monsterid 2094 || monsterid 2095 || monsterid 2096 || monsterid 2097 || monsterid 2098",
+    monsters: [
+      $monster`government bureaucrat`,
+      $monster`terrible mutant`,
+      $monster`angry ghost`,
+      $monster`annoyed snake`,
+      $monster`slime blob`,
+    ],
     chance: () => 1, // when available
   },
   {
@@ -221,14 +247,37 @@ export const wandererSources: WandererSource[] = [
       get("_voidFreeFights") < 5 &&
       get("cursedMagnifyingGlassCount") >= 13,
     equip: $item`cursed magnifying glass`,
-    monster: "monsterid 2227 || monsterid 2228 || monsterid 2229",
+    monsters: [$monster`void guy`, $monster`void slab`, $monster`void spider`],
     chance: () => 1, // when available
   },
   {
     name: "Goth",
     available: () => have($familiar`Artistic Goth Kid`) && get("_hipsterAdv") < 7,
     equip: $familiar`Artistic Goth Kid`,
-    monster: "monstername Black Crayon *",
+    monsters: [
+      $monster`Black Crayon Beast`,
+      $monster`Black Crayon Beetle`,
+      $monster`Black Crayon Constellation`,
+      $monster`Black Crayon Golem`,
+      $monster`Black Crayon Demon`,
+      $monster`Black Crayon Man`,
+      $monster`Black Crayon Elemental`,
+      $monster`Black Crayon Crimbo Elf`,
+      $monster`Black Crayon Fish`,
+      $monster`Black Crayon Goblin`,
+      $monster`Black Crayon Hippy`,
+      $monster`Black Crayon Hobo`,
+      $monster`Black Crayon Shambling Monstrosity`,
+      $monster`Black Crayon Manloid`,
+      $monster`Black Crayon Mer-kin`,
+      $monster`Black Crayon Frat Orc`,
+      $monster`Black Crayon Penguin`,
+      $monster`Black Crayon Pirate`,
+      $monster`Black Crayon Flower`,
+      $monster`Black Crayon Slime`,
+      $monster`Black Crayon Undead Thing`,
+      $monster`Black Crayon Spiraling Shape`,
+    ],
     chance: () => [0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0][get("_hipsterAdv")],
   },
   {
@@ -238,19 +287,18 @@ export const wandererSources: WandererSource[] = [
       myLevel() >= 10 &&
       have($familiar`Grey Goose`) &&
       familiarWeight($familiar`Grey Goose`) >= 6 &&
-      itemAmount($item`teacher's pen`) >= 3 &&
       getKramcoWandererChance() === 1,
-    equip: [
-      $item`Kramco Sausage-o-Matic™`,
-      $familiar`Grey Goose`,
+    equip: {
+      offhand: $item`Kramco Sausage-o-Matic™`,
+      familiar: $familiar`Grey Goose`,
       // Get 11 famexp at the end of the fight, to maintain goose weight
-      $item`yule hatchet`,
-      $item`grey down vest`,
-      $item`teacher's pen`,
-      $item`teacher's pen`,
-      $item`teacher's pen`,
-    ],
-    monster: $monster`sausage goblin`,
+      weapon: $item`yule hatchet`,
+      famequip: $item`grey down vest`,
+      acc1: $item`teacher's pen`,
+      acc2: $item`teacher's pen`,
+      acc3: $item`teacher's pen`,
+    },
+    monsters: [$monster`sausage goblin`],
     chance: () => getKramcoWandererChance(),
     macro: new Macro().trySkill($skill`Emit Matter Duplicating Drones`),
   },
@@ -258,7 +306,7 @@ export const wandererSources: WandererSource[] = [
     name: "Kramco",
     available: () => have($item`Kramco Sausage-o-Matic™`) && myLevel() >= 10,
     equip: $item`Kramco Sausage-o-Matic™`,
-    monster: $monster`sausage goblin`,
+    monsters: [$monster`sausage goblin`],
     chance: () => getKramcoWandererChance(),
   },
 ];
@@ -357,7 +405,10 @@ export const runawaySources: RunawaySource[] = [
         ensureEffect($effect`Ode to Booze`, 5);
       }
     },
-    equip: [runawayFamiliar, ...familiarGear, $item`Fourth of May Cosplay Saber`],
+    equip: {
+      familiar: runawayFamiliar,
+      equip: [...familiarGear, $item`Fourth of May Cosplay Saber`],
+    },
     do: new Macro().runaway(),
     chance: () => 1,
     banishes: false,
@@ -378,7 +429,10 @@ export const runawaySources: RunawaySource[] = [
         ensureEffect($effect`Ode to Booze`, 5);
       }
     },
-    equip: [runawayFamiliar, ...familiarGear, $item`Fourth of May Cosplay Saber`, $item`familiar scrapbook`],
+    equip: {
+      familiar: runawayFamiliar,
+      equip: [...familiarGear, $item`Fourth of May Cosplay Saber`, $item`familiar scrapbook`],
+    },
     do: new Macro().runaway(),
     chance: () => 1,
     banishes: false,
@@ -397,7 +451,7 @@ export const runawaySources: RunawaySource[] = [
       have($item`glob of Blank-Out`) ||
       (mallPrice($item`bottle of Blank-Out`) < 5 * runawayValue && !get("_blankoutUsed")),
     do: new Macro().tryItem($item`glob of Blank-Out`),
-    chance: () => (get("_navelRunaways") < 3 ? 1 : 0.2),
+    chance: () => 1,
     banishes: false,
   },
   {

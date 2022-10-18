@@ -29,8 +29,8 @@ import {
   set,
   Witchess,
 } from "libram";
-import { Quest } from "./structure";
-import { CombatStrategy } from "../combat";
+import { Quest } from "../engine/task";
+import { CombatStrategy } from "../engine/combat";
 import { args } from "../main";
 
 function primestatId(): number {
@@ -52,7 +52,10 @@ export const LevelingQuest: Quest = {
       name: "Cloud Talk",
       after: [],
       ready: () => get("getawayCampsiteUnlocked"),
-      completed: () => have($effect`That's Just Cloud-Talk, Man`) || myLevel() >= args.levelto,
+      completed: () =>
+        have($effect`That's Just Cloud-Talk, Man`) ||
+        get("_campAwayCloudBuffs", 0) > 0 ||
+        myLevel() >= args.levelto,
       do: () => visitUrl("place.php?whichplace=campaway&action=campaway_sky"),
       freeaction: true,
       limit: { tries: 1 },
@@ -102,12 +105,18 @@ export const LevelingQuest: Quest = {
       ready: () => ChateauMantegna.have(),
       completed: () => get("timesRested") >= totalFreeRests() || myLevel() >= args.levelto,
       prepare: (): void => {
+        // Set the chateau to give the proper stats
         if (myPrimestat() === $stat`Muscle`) {
           ChateauMantegna.changeNightstand("electric muscle stimulator");
         } else if (myPrimestat() === $stat`Mysticality`) {
           ChateauMantegna.changeNightstand("foreign language tapes");
         } else if (myPrimestat() === $stat`Moxie`) {
           ChateauMantegna.changeNightstand("bowl of potpourri");
+        }
+
+        // Set extra free rests
+        if (ChateauMantegna.getCeiling() !== "ceiling fan") {
+          ChateauMantegna.changeCeiling("ceiling fan");
         }
       },
       do: () => visitUrl("place.php?whichplace=chateau&action=chateau_restbox"),
@@ -189,7 +198,12 @@ export const LevelingQuest: Quest = {
     {
       name: "God Lobster",
       after: [],
-      acquire: [{ item: $item`makeshift garbage shirt` }],
+      acquire: [
+        {
+          item: $item`makeshift garbage shirt`,
+          get: () => cliExecute("fold makeshift garbage shirt"),
+        },
+      ],
       ready: () => have($familiar`God Lobster`),
       completed: () => get("_godLobsterFights") >= 3 || myLevel() >= args.levelto,
       do: (): void => {
@@ -224,7 +238,12 @@ export const LevelingQuest: Quest = {
     {
       name: "Sausage Fights",
       after: [],
-      acquire: [{ item: $item`makeshift garbage shirt` }],
+      acquire: [
+        {
+          item: $item`makeshift garbage shirt`,
+          get: () => cliExecute("fold makeshift garbage shirt"),
+        },
+      ],
       ready: () =>
         have($familiar`Pocket Professor`) &&
         have($item`Kramco Sausage-o-Matic™`) &&
@@ -251,7 +270,12 @@ export const LevelingQuest: Quest = {
     {
       name: "Neverending Party",
       after: [],
-      acquire: [{ item: $item`makeshift garbage shirt` }],
+      acquire: [
+        {
+          item: $item`makeshift garbage shirt`,
+          get: () => cliExecute("fold makeshift garbage shirt"),
+        },
+      ],
       completed: () => get("_neverendingPartyFreeTurns") >= 10 || myLevel() >= args.levelto,
       do: $location`The Neverending Party`,
       choices: { 1322: 2, 1324: 5 },
@@ -281,7 +305,12 @@ export const LevelingQuest: Quest = {
     {
       name: "Machine Elf",
       after: [],
-      acquire: [{ item: $item`makeshift garbage shirt` }],
+      acquire: [
+        {
+          item: $item`makeshift garbage shirt`,
+          get: () => cliExecute("fold makeshift garbage shirt"),
+        },
+      ],
       ready: () => have($familiar`Machine Elf`),
       completed: () => get("_machineTunnelsAdv") >= 5 || myLevel() >= args.levelto,
       do: $location`The Deep Machine Tunnels`,

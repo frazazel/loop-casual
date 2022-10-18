@@ -12,8 +12,9 @@ import {
   Macro,
   SourceTerminal,
 } from "libram";
-import { OutfitSpec, Quest, step, Task } from "./structure";
-import { CombatStrategy } from "../combat";
+import { Quest, Task } from "../engine/task";
+import { CombatStrategy } from "../engine/combat";
+import { OutfitSpec, step } from "grimoire-kolmafia";
 
 const ABoo: Task[] = [
   {
@@ -64,7 +65,10 @@ const ABoo: Task[] = [
             .trySkill(`Duplicate`)
             .tryItem(`yellow rocket`);
         } else {
-          return new Macro().trySkill($skill`Feel Envy`);
+          return new Macro()
+            .trySkill($skill`Feel Envy`)
+            .trySkill($skill`Saucegeyser`)
+            .repeat();
         }
       })
       .killHard(),
