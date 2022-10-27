@@ -589,11 +589,11 @@ export const WarQuest: Quest = {
       limit: { tries: 30 },
     },
     {
-      // Use stuffing fluffers to finish the war (iff delaywar was passed)
+      // Use stuffing fluffers to finish the war with delaywar
       name: "Fluffers",
       after: ["Enrage"],
-      completed: () =>
-        get("hippiesDefeated") >= 1000 || get("fratboysDefeated") >= 1000 || !args.major.delaywar,
+      ready: () => myTurncount() >= 1000,
+      completed: () => get("hippiesDefeated") >= 1000 || get("fratboysDefeated") >= 1000,
       outfit: {
         equip: $items`beer helmet, distressed denim pants, bejeweled pledge pin`,
       },
