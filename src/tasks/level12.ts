@@ -98,6 +98,7 @@ const Lighthouse: Task[] = [
       warSkip(),
     priority: (): OverridePriority => {
       if (AutumnAton.have()) {
+        if (myBasestat($stat`Moxie`) < 200) return OverridePriority.BadMood;
         if ($location`Sonofa Beach`.turnsSpent === 0) return OverridePriority.GoodAutumnaton;
         else if (myTurncount() < 400) return OverridePriority.BadAutumnaton;
       }
@@ -138,6 +139,7 @@ const Lighthouse: Task[] = [
         return new Macro();
       })
       .kill($monster`lobsterfrogman`),
+    orbtargets: undefined,
     choices: { 1387: 2 },
     limit: {
       tries: 20,
@@ -161,6 +163,7 @@ const Lighthouse: Task[] = [
     do: $location`Sonofa Beach`,
     outfit: { modifier: "+combat" },
     combat: new CombatStrategy().kill($monster`lobsterfrogman`),
+    orbtargets: undefined,
     limit: { soft: 40 },
   },
   {
