@@ -59,6 +59,7 @@ import {
 import { Engine as BaseEngine, CombatResources, CombatStrategy, Outfit } from "grimoire-kolmafia";
 import { CombatActions, MyActionDefaults } from "./combat";
 import {
+  cacheDress,
   equipCharging,
   equipDefaults,
   equipFirst,
@@ -477,12 +478,13 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
 
   dress(task: ActiveTask, outfit: Outfit): void {
     try {
-      outfit.dress();
+      cacheDress(outfit);
     } catch {
       // If we fail to dress, this is maybe just a mafia desync.
       // So refresh our inventory and try again (once).
       debug("Possible mafia desync detected; refreshing...");
       cliExecute("refresh all");
+      // Do not try and cache-dress
       outfit.dress({ forceUpdate: true });
     }
     fixFoldables(outfit);
@@ -644,7 +646,7 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
 }
 
 const consumables_blacklist = new Set<Item>(
-  $items`wet stew, wet stunt nut stew, stunt nuts, astral pilsner, astral hot dog dinner, giant marshmallow, booze-soaked cherry, sponge cake, gin-soaked blotter paper, steel margarita, bottle of Chateau de Vinegar, Bowl of Scorpions, unnamed cocktail, Flamin' Whatshisname, goat cheese, Extrovermectin™, blueberry muffin, bran muffin, chocolate chip muffin, Schrödinger's thermos, quantum taco, pirate fork, everfull glass, [glitch season reward name]`
+  $items`wet stew, wet stunt nut stew, stunt nuts, astral pilsner, astral hot dog dinner, giant marshmallow, booze-soaked cherry, sponge cake, gin-soaked blotter paper, steel margarita, bottle of Chateau de Vinegar, Bowl of Scorpions, unnamed cocktail, Flamin' Whatshisname, goat cheese, Extrovermectin™, blueberry muffin, bran muffin, chocolate chip muffin, Schrödinger's thermos, quantum taco, pirate fork, everfull glass, [glitch season reward name], Affirmation Cookie`
 );
 function autosellJunk(): void {
   // eslint-disable-next-line eqeqeq
