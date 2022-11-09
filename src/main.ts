@@ -99,6 +99,10 @@ export const args = Args.create(
         help: "A comma-separated list of skills to get, in addition to skills that will directly help the run.",
         default: "Financial Spreadsheets",
       }),
+      forcelocket: Args.flag({
+        help: "Always equip the combat lover's locket, in order to get monsters inside quickly.",
+        default: false,
+      }),
     }),
     debug: Args.group("Debug Options", {
       actions: Args.number({
@@ -122,6 +126,10 @@ export const args = Args.create(
       settings: Args.flag({
         help: "Show the parsed value for all arguments and exit.",
         setting: "",
+      }),
+      lastasdonbumperturn: Args.number({
+        help: "Set the last usage of Asdon Martin: Spring-Loaded Front Bumper, in case of a tracking issue",
+        hidden: true,
       }),
     }),
   },

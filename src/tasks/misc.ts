@@ -714,6 +714,10 @@ export const MiscQuest: Quest = {
         )
           zones.push($location`Sonofa Beach`);
 
+        if (step("questL09Topping") >= 1) {
+          zones.push($location`The Smut Orc Logging Camp`);
+        }
+
         // Mid underground locations for autumn dollar
         zones.push($location`The Defiled Nook`, $location`Cobb's Knob Menagerie, Level 3`);
 
@@ -832,6 +836,16 @@ export function teleportitisTask(engine: Engine, tasks: Task[]): Task {
   // Leave the gingerbread city clock alone
   choices[1215] = 2;
 
+  const combat = new CombatStrategy();
+  const haiku_monsters = [
+    $monster`amateur ninja`,
+    $monster`ancient insane monk`,
+    $monster`ferocious bugbear`,
+    $monster`gelatinous cube`,
+    $monster`Knob Goblin poseur`,
+  ];
+  combat.macro(new Macro().attack().repeat(), haiku_monsters);
+
   return {
     name: "Teleportitis",
     after: ["Wand/Get Teleportitis"],
@@ -845,6 +859,7 @@ export function teleportitisTask(engine: Engine, tasks: Task[]): Task {
         set("questL11Ron", "step1");
     },
     outfit: { equip: $items`antique machete` },
+    combat: combat,
     choices: choices,
     limit: { soft: 20 },
   };
