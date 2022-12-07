@@ -27,7 +27,7 @@ function getRelevantEffects(): { [modifier: string]: Effect[] } {
     "-combat": $effects`Smooth Movements, The Sonata of Sneakiness`,
     "+combat": $effects`Carlweather's Cantata of Confrontation, Musk of the Moose`,
     "": $effects`Empathy, Leash of Linguini, Astral Shell, Elemental Saucesphere`,
-    "fam weight": $effects`Chorale of Companionship`,
+    "fam weight": $effects`Chorale of Companionship, Blood Bond`,
     init: $effects`Walberg's Dim Bulb, Springy Fusilli`,
     ML: $effects`Ur-Kel's Aria of Annoyance, Pride of the Puffin, Drescher's Annoying Noise`,
     item: $effects`Fat Leon's Phat Loot Lyric, Singer's Faithful Ocelot`,
