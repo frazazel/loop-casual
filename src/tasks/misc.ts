@@ -76,7 +76,9 @@ export const MiscQuest: Quest = {
       name: "Floundry",
       after: [],
       completed: () =>
-	  	get("_floundryItemCreated") || have($item`fish hatchet`) || get("_loop_casual_floundry_checked", "") === Clan.get().name,
+        get("_floundryItemCreated") ||
+        have($item`fish hatchet`) ||
+        get("_loop_casual_floundry_checked", "") === Clan.get().name,
       do: () => {
         const sufficientFish = visitUrl("clan_viplounge.php?action=floundry").match(
           "([0-9]+) hatchetfish"
@@ -321,12 +323,10 @@ export const MiscQuest: Quest = {
     {
       name: "Autumn-aton",
       after: [],
-      ready: () => have($item`Autumn-aton`),
+      ready: () => have($item`autumn-aton`),
       completed: () => step("questL13Final") >= 0,
       priority: () => true,
-      combat: new CombatStrategy().macro(
-        new Macro()
-        ).kill(),
+      combat: new CombatStrategy().macro(new Macro()).kill(),
       do: () => {
         //make sure all available upgrades are installed
         AutumnAton.upgrade();
@@ -336,24 +336,28 @@ export const MiscQuest: Quest = {
         } else if (!AutumnAton.currentUpgrades().includes("rightleg1") && 
             AutumnAton.availableLocations().includes($location`The Haunted Kitchen`)){
           AutumnAton.sendTo($location`The Haunted Kitchen`);
-        } else if (!AutumnAton.currentUpgrades().includes("leftarm1")){
+        } else if (!AutumnAton.currentUpgrades().includes("leftarm1")) {
           AutumnAton.sendTo($location`The Haunted Pantry`);
-        } else if (!AutumnAton.currentUpgrades().includes("rightarm1") && 
-            AutumnAton.availableLocations().includes($location`Twin Peak`)){
+        } else if (
+          !AutumnAton.currentUpgrades().includes("rightarm1") &&
+          AutumnAton.availableLocations().includes($location`Twin Peak`)
+        ) {
           AutumnAton.sendTo($location`Twin Peak`);
-        } 
+        }
         //lighthouse
-        else if (AutumnAton.currentUpgrades().length >= 4 &&
+        else if (
+          AutumnAton.currentUpgrades().length >= 4 &&
           step("questL12War") >= 1 &&
           itemAmount($item`barrel of gunpowder`) < 5 &&
-          get("sidequestLighthouseCompleted") === "none"){
+          get("sidequestLighthouseCompleted") === "none"
+        ) {
           adv1($location`Sonofa Beach`);
           AutumnAton.sendTo($location`Sonofa Beach`);
-        } 
+        }
         //farming
-        else if (AutumnAton.availableLocations().includes($location`The Defiled Nook`)){
+        else if (AutumnAton.availableLocations().includes($location`The Defiled Nook`)) {
           AutumnAton.sendTo($location`The Defiled Nook`);
-        } 
+        }
         //If all else fails, grab an autumn leaf. This shouldn't ever happen
         else {
           AutumnAton.sendTo($location`The Sleazy Back Alley`);
