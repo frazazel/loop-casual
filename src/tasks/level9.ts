@@ -35,7 +35,7 @@ const ABoo: Task[] = [
     priority: () => get("lastCopyableMonster") === $monster`toothy sklelton`, // After Defiled Nook
     completed: () => itemAmount($item`A-Boo clue`) * 30 >= get("booPeakProgress"),
     prepare: () => {
-      if (!SourceTerminal.isCurrentSkill($skill`Duplicate`))
+      if (SourceTerminal.have() && !SourceTerminal.isCurrentSkill($skill`Duplicate`))
         SourceTerminal.educate([$skill`Duplicate`, $skill`Digitize`]);
     },
     do: $location`A-Boo Peak`,
@@ -73,7 +73,7 @@ const ABoo: Task[] = [
       })
       .killHard(),
     choices: { 611: 1, 1430: 1 },
-    limit: { tries: 4 },
+    limit: { tries: 8 },
   },
   {
     name: "ABoo Horror",
