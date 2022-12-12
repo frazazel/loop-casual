@@ -75,7 +75,7 @@ export const MiscQuest: Quest = {
       name: "Floundry",
       after: [],
       completed: () =>
-        have($item`fish hatchet`) || get("_loop_casual_floundry_checked", "") === Clan.get().name,
+	  	get("_floundryItemCreated") || have($item`fish hatchet`) || get("_loop_casual_floundry_checked", "") === Clan.get().name,
       do: () => {
         const sufficientFish = visitUrl("clan_viplounge.php?action=floundry").match(
           "([0-9]+) hatchetfish"
