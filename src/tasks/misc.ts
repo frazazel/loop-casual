@@ -331,10 +331,13 @@ export const MiscQuest: Quest = {
         //make sure all available upgrades are installed
         AutumnAton.upgrade();
         //get upgrades
-        if (!AutumnAton.currentUpgrades().includes("leftleg1")){
+        if (get("ascensionsToday") >= 2 && !AutumnAton.currentUpgrades().includes("leftleg1")) {
           AutumnAton.sendTo($location`Noob Cave`);
-        } else if (!AutumnAton.currentUpgrades().includes("rightleg1") && 
-            AutumnAton.availableLocations().includes($location`The Haunted Kitchen`)){
+        } else if (
+          get("ascensionsToday") >= 2 &&
+          !AutumnAton.currentUpgrades().includes("rightleg1") &&
+          AutumnAton.availableLocations().includes($location`The Haunted Kitchen`)
+        ) {
           AutumnAton.sendTo($location`The Haunted Kitchen`);
         } else if (!AutumnAton.currentUpgrades().includes("leftarm1")) {
           AutumnAton.sendTo($location`The Haunted Pantry`);
