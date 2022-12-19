@@ -1,4 +1,4 @@
-import { cliExecute, floor, itemAmount, myLevel, use, visitUrl } from "kolmafia";
+import { cliExecute, floor, itemAmount, myAscensions, myLevel, use, visitUrl } from "kolmafia";
 import {
   $effect,
   $effects,
@@ -41,10 +41,8 @@ const ABoo: Task[] = [
     do: $location`A-Boo Peak`,
     outfit: (): OutfitSpec => {
       if (
-        $location`A-Boo Peak`.turnsSpent === 0 &&
-        $location`Twin Peak`.turnsSpent === 0 &&
-        $location`Oil Peak`.turnsSpent === 0 &&
-        have($skill`Comprehensive Cartography`)
+        have($skill`Comprehensive Cartography`) &&
+        get("lastCartographyBooPeak") !== myAscensions()
       ) {
         // Prepare for Ghostly Memories (1430)
         return { modifier: "spooky res, cold res, HP" };
