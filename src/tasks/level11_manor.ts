@@ -214,9 +214,18 @@ const ManorBasement: Task[] = [
     effects: $effects`Merry Smithsness`,
     choices: { 901: 2 },
     combat: new CombatStrategy()
-      .macro(new Macro().trySkill($skill`Otoscope`), $monster`possessed wine rack`)
+      .macro(Macro.trySkill($skill`Otoscope`), $monster`possessed wine rack`)
       .banish($monsters`mad wino, skeletal sommelier`)
-      .killFree(),
+      .macro(
+        Macro.externalIf(
+          have($effect`Steely-Eyed Squint`),
+          Macro.trySkill($skill`Chest X-Ray`)
+            .trySkill($skill`Fire the Jokester's Gun`)
+            .trySkill($skill`Shattering Punch`)
+            .trySkill($skill`Gingerbread Mob Hit`),
+          Macro.attack().repeat()
+        )
+      ),
     limit: { soft: 10 },
   },
   {
@@ -245,7 +254,16 @@ const ManorBasement: Task[] = [
         $monster`cabinet of Dr. Limpieza`
       )
       .banish($monsters`plaid ghost, possessed laundry press`)
-      .killFree(),
+      .macro(
+        Macro.externalIf(
+          have($effect`Steely-Eyed Squint`),
+          Macro.trySkill($skill`Chest X-Ray`)
+            .trySkill($skill`Fire the Jokester's Gun`)
+            .trySkill($skill`Shattering Punch`)
+            .trySkill($skill`Gingerbread Mob Hit`),
+          Macro.attack().repeat()
+        )
+      ),
     limit: { soft: 10 },
   },
   {
