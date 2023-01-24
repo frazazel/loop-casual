@@ -86,7 +86,7 @@ export const DietQuest: Quest = {
         // Eat the diet
         consumeDiet(plannedDiet, MPA);
       },
-      limit: { tries: 1 },
+      limit: { tries: 3 },
       freeaction: true,
       noadventures: true,
     },
