@@ -1,5 +1,6 @@
 import { OutfitSpec } from "grimoire-kolmafia";
 import {
+  availableAmount,
   buy,
   cliExecute,
   Familiar,
@@ -469,26 +470,44 @@ export const runawaySources: RunawaySource[] = [
   },
   {
     name: "Tatter",
-    available: () =>
-      itemAmount($item`tattered scrap of paper`) >= 10 ||
-      mallPrice($item`tattered scrap of paper`) <= 0.5 * runawayValue,
+    available: () => mallPrice($item`tattered scrap of paper`) <= 0.5 * runawayValue,
     prepare: () => {
-      buy(10, $item`tattered scrap of paper`, 0.5 * runawayValue);
+      retrieveItem(
+        Math.min(10, availableAmount($item`tattered scrap of paper`)),
+        $item`tattered scrap of paper`
+      );
+      buy(
+        Math.max(0, 10 - itemAmount($item`tattered scrap of paper`)),
+        $item`tattered scrap of paper`,
+        0.5 * runawayValue
+      );
     },
     do: Macro.while_(
       "hascombatitem tattered scrap of paper",
-      Macro.item([$item`tattered scrap of paper`, $item`tattered scrap of paper`])
+      Macro.externalIf(
+        have($skill`Ambidextrous Funkslinging`),
+        Macro.item([$item`tattered scrap of paper`, $item`tattered scrap of paper`]),
+        Macro.item($item`tattered scrap of paper`)
+      )
     ).runaway(),
     chance: () => 0.999,
     banishes: false,
   },
   {
     name: "GOTO",
-    available: () => itemAmount($item`GOTO`) >= 20 || mallPrice($item`GOTO`) <= 0.3 * runawayValue,
+    available: () => mallPrice($item`GOTO`) <= 0.3 * runawayValue,
     prepare: () => {
-      buy(20, $item`GOTO`, 0.3 * runawayValue);
+      retrieveItem(Math.min(20, availableAmount($item`GOTO`)), $item`GOTO`);
+      buy(Math.max(0, 20 - itemAmount($item`GOTO`)), $item`GOTO`, 0.3 * runawayValue);
     },
-    do: Macro.while_("hascombatitem GOTO", Macro.item([$item`GOTO`, $item`GOTO`])).runaway(),
+    do: Macro.while_(
+      "hascombatitem GOTO",
+      Macro.externalIf(
+        have($skill`Ambidextrous Funkslinging`),
+        Macro.item([$item`GOTO`, $item`GOTO`]),
+        Macro.item($item`GOTO`)
+      )
+    ).runaway(),
     chance: () => 0.999,
     banishes: false,
   },
