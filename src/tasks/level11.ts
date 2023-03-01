@@ -3,6 +3,7 @@ import {
   cliExecute,
   haveEquipped,
   itemAmount,
+  mallPrice,
   myLevel,
   runChoice,
   use,
@@ -24,6 +25,7 @@ import {
 import { Quest, Task } from "../engine/task";
 import { CombatStrategy } from "../engine/combat";
 import { OutfitSpec, step } from "grimoire-kolmafia";
+import { args } from "../main";
 
 const Diary: Task[] = [
   {
@@ -65,30 +67,85 @@ const Diary: Task[] = [
 
 const Desert: Task[] = [
   {
-    name: "Scrip",
-    after: ["Misc/Unlock Beach"],
-    completed: () => have($item`Shore Inc. Ship Trip Scrip`) || have($item`UV-resistant compass`),
-    do: $location`The Shore, Inc. Travel Agency`,
-    choices: { 793: 1 },
+    name: "Initial Milestones",
+    after: ["Diary"],
+    ready: () =>
+      (args.milestones || mallPrice($item`milestone`) <= (5 / 3) * get("valueOfAdventure")) &&
+      get("desertExploration") === 0,
+    completed: () => get("desertExploration") >= 10,
+    acquire: [{ item: $item`milestone`, price: (4 / 3) * get("valueOfAdventure"), num: 2 }],
+    do: () => use(2, $item`milestone`),
     limit: { tries: 1 },
     freeaction: true,
   },
   {
+    name: "Scrip",
+    after: ["Misc/Unlock Beach"],
+    completed: () =>
+      get("desertExploration") >= 100 ||
+      args.milestones ||
+      have($item`Shore Inc. Ship Trip Scrip`) ||
+      have($item`UV-resistant compass`),
+    do: $location`The Shore, Inc. Travel Agency`,
+    choices: { 793: 1 },
+    limit: { tries: 1 },
+  },
+  {
     name: "Compass",
-    after: ["Misc/Unlock Beach", "Scrip"],
-    completed: () => have($item`UV-resistant compass`),
+    after: ["Diary", "Scrip"],
+    completed: () =>
+      get("desertExploration") >= 100 || args.milestones || have($item`UV-resistant compass`),
     do: () => buy($coinmaster`The Shore, Inc. Gift Shop`, 1, $item`UV-resistant compass`),
+    limit: { tries: 1 },
+    freeaction: true,
+  },
+  {
+    name: "Gnasir",
+    after: ["Diary"],
+    ready: () =>
+      $location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time") &&
+      (itemAmount($item`worm-riding manual page`) >= 15 ||
+        (get("gnasirProgress") & 2) === 0 ||
+        (get("gnasirProgress") & 4) === 0),
+    completed: () => (get("gnasirProgress") & 16) > 0 || get("desertExploration") >= 100,
+    acquire: [
+      { item: $item`can of black paint`, useful: () => (get("gnasirProgress") & 2) === 0 },
+      { item: $item`killing jar`, useful: () => (get("gnasirProgress") & 4) === 0 },
+      { item: $item`drum machine`, useful: () => (get("gnasirProgress") & 16) === 0 },
+    ],
+    do: () => {
+      let res = visitUrl("place.php?whichplace=desertbeach&action=db_gnasir");
+      while (res.includes("value=2")) {
+        res = runChoice(2);
+      }
+      runChoice(1);
+    },
+    post: () => {
+      cliExecute("use * desert sightseeing pamphlet");
+      if (have($item`worm-riding hooks`)) use($item`drum machine`);
+    },
+    limit: { tries: 2 },
+    freeaction: true,
+  },
+  {
+    name: "Finish with Milestones",
+    after: ["Diary"],
+    ready: () => (get("gnasirProgress") & 2) === 1 && (get("gnasirProgress") & 4) === 1,
+    completed: () => !args.milestones || get("desertExploration") >= 100,
+    acquire: [
+      {
+        item: $item`milestone`,
+        price: (4 / 3) * get("valueOfAdventure"),
+        num: 20 - Math.ceil(get("desertExploration") / 5),
+      },
+    ],
+    do: () => use(20 - Math.ceil(get("desertExploration") / 5), $item`milestone`),
     limit: { tries: 1 },
     freeaction: true,
   },
   {
     name: "Desert",
     after: ["Diary", "Compass"],
-    acquire: [
-      { item: $item`can of black paint`, useful: () => (get("gnasirProgress") & 2) === 0 },
-      { item: $item`killing jar`, useful: () => (get("gnasirProgress") & 4) === 0 },
-      { item: $item`drum machine`, useful: () => (get("gnasirProgress") & 16) === 0 },
-    ],
     completed: () => get("desertExploration") >= 100,
     do: $location`The Arid, Extra-Dry Desert`,
     outfit: (): OutfitSpec => {
@@ -113,24 +170,6 @@ const Desert: Task[] = [
         else return new Macro();
       })
       .kill(),
-    post: (): void => {
-      if (!$location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time"))
-        return;
-      if ((get("gnasirProgress") & 16) > 0) return;
-      if (
-        itemAmount($item`worm-riding manual page`) >= 15 ||
-        (get("gnasirProgress") & 2) === 0 ||
-        (get("gnasirProgress") & 4) === 0
-      ) {
-        let res = visitUrl("place.php?whichplace=desertbeach&action=db_gnasir");
-        while (res.includes("value=2")) {
-          res = runChoice(2);
-        }
-        runChoice(1);
-      }
-      cliExecute("use * desert sightseeing pamphlet");
-      if (have($item`worm-riding hooks`)) use($item`drum machine`);
-    },
     limit: { soft: 30 },
     delay: 25,
     choices: { 805: 1 },
