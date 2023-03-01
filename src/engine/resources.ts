@@ -468,6 +468,31 @@ export const runawaySources: RunawaySource[] = [
     banishes: false,
   },
   {
+    name: "Tatter",
+    available: () =>
+      itemAmount($item`tattered scrap of paper`) >= 10 ||
+      mallPrice($item`tattered scrap of paper`) <= 0.5 * runawayValue,
+    prepare: () => {
+      buy(10, $item`tattered scrap of paper`, 0.5 * runawayValue);
+    },
+    do: Macro.while_(
+      "hascombatitem tattered scrap of paper",
+      Macro.item([$item`tattered scrap of paper`, $item`tattered scrap of paper`])
+    ).runaway(),
+    chance: () => 0.999,
+    banishes: false,
+  },
+  {
+    name: "GOTO",
+    available: () => itemAmount($item`GOTO`) >= 20 || mallPrice($item`GOTO`) <= 0.3 * runawayValue,
+    prepare: () => {
+      buy(20, $item`GOTO`, 0.3 * runawayValue);
+    },
+    do: Macro.while_("hascombatitem GOTO", Macro.item([$item`GOTO`, $item`GOTO`])).runaway(),
+    chance: () => 0.999,
+    banishes: false,
+  },
+  {
     name: "GAP",
     available: () => have($item`Greatest American Pants`),
     equip: $item`Greatest American Pants`,
