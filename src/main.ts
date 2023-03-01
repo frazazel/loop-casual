@@ -2,6 +2,7 @@ import {
   cliExecute,
   gametimeToInt,
   Item,
+  mallPrice,
   myAdventures,
   myClosetMeat,
   myLevel,
@@ -69,9 +70,12 @@ export const args = Args.create("loopcasual", "A script to complete casual runs.
     help: "If true, use stuffing fluffers to finish the war.",
     default: true,
   }),
+  milestones: Args.boolean({
+    help: "If true, use milestones to finish the desert.",
+    default: mallPrice($item`milestone`) < (4 / 3) * get("valueOfAdventure"),
+  }),
   workshed: Args.item({
     help: "Workshed item to place in an empty workshed at the start of the run.",
-    // eslint-disable-next-line libram/verify-constants
     default: $item`model train set`,
     options: worksheds,
   }),
