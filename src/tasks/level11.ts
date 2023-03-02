@@ -130,7 +130,7 @@ const Desert: Task[] = [
   {
     name: "Finish with Milestones",
     after: ["Diary"],
-    ready: () => (get("gnasirProgress") & 2) === 1 && (get("gnasirProgress") & 4) === 1,
+    ready: () => (get("gnasirProgress") & 2) > 0 && (get("gnasirProgress") & 4) > 0,
     completed: () => !args.milestones || get("desertExploration") >= 100,
     acquire: [
       {
