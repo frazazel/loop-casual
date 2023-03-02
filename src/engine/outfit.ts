@@ -80,16 +80,16 @@ export function equipDefaults(outfit: Outfit): void {
 
 export function fixFoldables(outfit: Outfit) {
   // Libram outfit cache may not autofold umbrella, so we need to
+  const modif = outfit.modifier instanceof Array ? outfit.modifier.join(",") : outfit.modifier;
   if (equippedAmount($item`unbreakable umbrella`) > 0) {
-    if (outfit.modifier?.includes("-combat")) {
+    if (modif?.includes("-combat")) {
       if (get("umbrellaState") !== "cocoon") cliExecute("umbrella cocoon");
     } else if (
-      (outfit.modifier?.includes("ML") ||
-        outfit.modifier?.toLowerCase().includes("monster level percent")) &&
-      !outfit.modifier.match("-[\\d .]*ML")
+      (modif?.includes("ML") || modif?.toLowerCase().includes("monster level percent")) &&
+      !modif.match("-[\\d .]*ML")
     ) {
       if (get("umbrellaState") !== "broken") cliExecute("umbrella broken");
-    } else if (outfit.modifier?.includes("item")) {
+    } else if (modif?.includes("item")) {
       if (get("umbrellaState") !== "bucket style") cliExecute("umbrella bucket");
     } else {
       if (get("umbrellaState") !== "forward-facing") cliExecute("umbrella forward");
@@ -98,12 +98,9 @@ export function fixFoldables(outfit: Outfit) {
 
   // Libram outfit cache may not autofold camera, so we need to
   if (equippedAmount($item`backup camera`) > 0) {
-    if (
-      (outfit.modifier?.includes("ML") && !outfit.modifier.match("-[\\d .]*ML")) ||
-      outfit.modifier?.includes("exp")
-    ) {
+    if ((modif?.includes("ML") && !modif.match("-[\\d .]*ML")) || modif?.includes("exp")) {
       if (get("backupCameraMode").toLowerCase() !== "ml") cliExecute("backupcamera ml");
-    } else if (outfit.modifier?.includes("init")) {
+    } else if (modif?.includes("init")) {
       if (get("backupCameraMode").toLowerCase() !== "init") cliExecute("backupcamera init");
     } else {
       if (get("backupCameraMode").toLowerCase() !== "meat") cliExecute("backupcamera meat");
@@ -114,17 +111,16 @@ export function fixFoldables(outfit: Outfit) {
   }
 
   // Libram outfit cache may not autofold parka, so we need to
-  // eslint-disable-next-line libram/verify-constants
   if (equippedAmount($item`Jurassic Parka`) > 0) {
-    if (outfit.modifier?.includes("cold res")) {
+    if (modif?.includes("cold res")) {
       if (get("parkaMode").toLowerCase() !== "kachungasaur") cliExecute("parka kachungasaur");
-    } else if (outfit.modifier?.includes("stench res")) {
+    } else if (modif?.includes("stench res")) {
       if (get("parkaMode").toLowerCase() !== "dilophosaur") cliExecute("parka dilophosaur");
-    } else if (outfit.modifier?.includes("ML") && !outfit.modifier.match("-[\\d .]*ML")) {
+    } else if (modif?.includes("ML") && !modif.match("-[\\d .]*ML")) {
       if (get("parkaMode").toLowerCase() !== "spikolodon") cliExecute("parka spikolodon");
     } else if (
-      (outfit.modifier?.includes("init") && !outfit.modifier.match("-[\\d .]*init")) ||
-      outfit.modifier?.includes("-combat")
+      (modif?.includes("init") && !modif.match("-[\\d .]*init")) ||
+      modif?.includes("-combat")
     ) {
       if (get("parkaMode").toLowerCase() !== "pterodactyl") cliExecute("parka pterodactyl");
     } else {

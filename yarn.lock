@@ -1664,9 +1664,9 @@ doctrine@^3.0.0:
     esutils "^2.0.2"
 
 electron-to-chromium@^1.4.284:
-  version "1.4.314"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.314.tgz#33e4ad7a2ca2ddbe2e113874cc0c0e2a00cb46bf"
-  integrity sha512-+3RmNVx9hZLlc0gW//4yep0K5SYKmIvB5DXg1Yg6varsuAHlHwTeqeygfS8DWwLCsNOWrgj+p9qgM5WYjw1lXQ==
+  version "1.4.315"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.315.tgz#b60a6676b3a1db332cfc8919118344aa06b9ac99"
+  integrity sha512-ndBQYz3Eyy3rASjjQ9poMJGoAlsZ/aZnq6GBsGL4w/4sWIAwiUHVSsMuADbxa8WJw7pZ0oxLpGbtoDt4vRTdCg==
 
 emojis-list@^3.0.0:
   version "3.0.0"
@@ -2209,9 +2209,9 @@ kind-of@^6.0.2:
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
 kolmafia@^5.27240.0:
-  version "5.27240.0"
-  resolved "https://registry.yarnpkg.com/kolmafia/-/kolmafia-5.27240.0.tgz#c617a484a7954f5e13fdfb6016242ee3eb34fa97"
-  integrity sha512-ve0LeCl/SoRSpCN/IxpTM45iDdY/31NZhREQJVF6R7nfz9trub/f+LYGZOKya2K4Kk/wp2ts0hJekWIHV8zQNQ==
+  version "5.27241.0"
+  resolved "https://registry.yarnpkg.com/kolmafia/-/kolmafia-5.27241.0.tgz#60d45c3d2c906c0ef721b42fbaf59fbdef5ea1ff"
+  integrity sha512-hvWloDXDOL5XDX0Z3cFEhtGGsLcnZxjm+/2ynmeCfhVST3QrM53x7lVH5IVsKH4LqoTF8Sj9eZUKAWaul17kNg==
 
 levn@^0.4.1:
   version "0.4.1"
