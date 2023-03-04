@@ -213,10 +213,10 @@ export class Engine extends BaseEngine<CombatActions, ActiveTask> {
       // So refresh our inventory and try again (once).
       debug("Possible mafia desync detected; refreshing...");
       cliExecute("refresh all");
-      outfit.dress();
+      outfit.dress({ forceUpdate: true });
     }
     fixFoldables(outfit);
-    applyEffects(outfit.modifier.join(",") ?? "");
+    applyEffects(outfit.modifier ?? "");
 
     // HP/MP upkeep
     if (!task.freeaction) {
