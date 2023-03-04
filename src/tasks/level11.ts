@@ -146,6 +146,9 @@ const Desert: Task[] = [
   {
     name: "Desert",
     after: ["Diary", "Compass"],
+    ready: () =>
+      !args.milestones ||
+      !$location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time"),
     completed: () => get("desertExploration") >= 100,
     do: $location`The Arid, Extra-Dry Desert`,
     outfit: (): OutfitSpec => {
