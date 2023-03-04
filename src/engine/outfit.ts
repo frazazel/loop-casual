@@ -28,11 +28,9 @@ export function equipUntilCapped<T extends Resource>(outfit: Outfit, resources: 
 }
 
 export function equipInitial(outfit: Outfit) {
-  const modif = outfit.modifier ? outfit.modifier.join(",") : undefined;
-
-  if (modif) {
+  if (outfit.modifier) {
     // Run maximizer
-    if (modif.includes("item")) {
+    if (outfit.modifier.includes("item")) {
       if (
         outfit.canEquip($item`li'l ninja costume`) &&
         outfit.canEquip($familiar`Trick-or-Treating Tot`)
@@ -47,14 +45,12 @@ export function equipInitial(outfit: Outfit) {
 }
 
 export function equipDefaults(outfit: Outfit): void {
-  const modif = outfit.modifier ? outfit.modifier.join(",") : undefined;
-
   if (myBasestat($stat`muscle`) >= 40) outfit.equip($item`mafia thumb ring`);
   outfit.equip($item`lucky gold ring`);
 
   // low priority familiars for combat frequency
-  if (modif?.includes("-combat")) outfit.equip($familiar`Disgeist`);
-  if (modif?.includes("+combat")) outfit.equip($familiar`Jumpsuited Hound Dog`);
+  if (outfit.modifier?.includes("-combat")) outfit.equip($familiar`Disgeist`);
+  if (outfit.modifier?.includes("+combat")) outfit.equip($familiar`Jumpsuited Hound Dog`);
 
   if (!outfit.modifier) {
     // Default outfit
@@ -84,8 +80,7 @@ export function equipDefaults(outfit: Outfit): void {
 
 export function fixFoldables(outfit: Outfit) {
   // Libram outfit cache may not autofold umbrella, so we need to
-  const modif = outfit.modifier ? outfit.modifier.join(",") : undefined;
-
+  const modif = outfit.modifier instanceof Array ? outfit.modifier.join(",") : outfit.modifier;
   if (equippedAmount($item`unbreakable umbrella`) > 0) {
     if (modif?.includes("-combat")) {
       if (get("umbrellaState") !== "cocoon") cliExecute("umbrella cocoon");
