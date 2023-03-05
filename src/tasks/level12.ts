@@ -335,15 +335,10 @@ const Orchard: Task[] = [
     outfit: () => {
       if (have($item`industrial fire extinguisher`) && get("_fireExtinguisherCharge") >= 10)
         return { equip: $items`industrial fire extinguisher` };
-      if (have($item`Fourth of May Cosplay Saber`) && get("_saberForceUses") < 5)
-        return { equip: $items`Fourth of May Cosplay Saber` };
       else return { modifier: "item" };
     },
     combat: new CombatStrategy()
-      .macro(
-        Macro.trySkill($skill`Use the Force`).trySkill($skill`Fire Extinguisher: Polar Vortex`),
-        $monster`larval filthworm`
-      )
+      .macro(Macro.trySkill($skill`Fire Extinguisher: Polar Vortex`), $monster`larval filthworm`)
       .kill(),
     choices: { 1387: 3 },
     limit: { soft: 10 },
@@ -363,15 +358,10 @@ const Orchard: Task[] = [
     outfit: () => {
       if (have($item`industrial fire extinguisher`) && get("_fireExtinguisherCharge") >= 10)
         return { equip: $items`industrial fire extinguisher` };
-      if (have($item`Fourth of May Cosplay Saber`) && get("_saberForceUses") < 5)
-        return { equip: $items`Fourth of May Cosplay Saber` };
       else return { modifier: "item" };
     },
     combat: new CombatStrategy()
-      .macro(
-        Macro.trySkill($skill`Use the Force`).trySkill($skill`Fire Extinguisher: Polar Vortex`),
-        $monster`filthworm drone`
-      )
+      .macro(Macro.trySkill($skill`Fire Extinguisher: Polar Vortex`), $monster`filthworm drone`)
       .kill(),
     choices: { 1387: 3 },
     effects: $effects`Filthworm Larva Stench`,
@@ -391,13 +381,11 @@ const Orchard: Task[] = [
     outfit: () => {
       if (have($item`industrial fire extinguisher`) && get("_fireExtinguisherCharge") >= 10)
         return { equip: $items`industrial fire extinguisher` };
-      if (have($item`Fourth of May Cosplay Saber`) && get("_saberForceUses") < 5)
-        return { equip: $items`Fourth of May Cosplay Saber` };
       else return { modifier: "item" };
     },
     combat: new CombatStrategy()
       .macro(
-        Macro.trySkill($skill`Use the Force`).trySkill($skill`Fire Extinguisher: Polar Vortex`),
+        Macro.trySkill($skill`Fire Extinguisher: Polar Vortex`),
         $monster`filthworm royal guard`
       )
       .kill(),
