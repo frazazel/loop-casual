@@ -79,35 +79,28 @@ const Desert: Task[] = [
     freeaction: true,
   },
   {
-    name: "Scrip",
-    after: ["Misc/Unlock Beach"],
-    completed: () =>
-      get("desertExploration") >= 100 ||
-      args.milestones ||
-      have($item`Shore Inc. Ship Trip Scrip`) ||
-      have($item`UV-resistant compass`),
-    do: $location`The Shore, Inc. Travel Agency`,
-    choices: { 793: 1 },
-    limit: { tries: 1 },
-  },
-  {
-    name: "Compass",
-    after: ["Diary", "Scrip"],
-    completed: () =>
-      get("desertExploration") >= 100 || args.milestones || have($item`UV-resistant compass`),
-    do: () => buy($coinmaster`The Shore, Inc. Gift Shop`, 1, $item`UV-resistant compass`),
-    limit: { tries: 1 },
-    freeaction: true,
-  },
-  {
-    name: "Gnasir",
+    name: "Find Gnasir",
     after: ["Diary"],
-    ready: () =>
-      $location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time") &&
-      (itemAmount($item`worm-riding manual page`) >= 15 ||
-        (get("gnasirProgress") & 2) === 0 ||
-        (get("gnasirProgress") & 4) === 0),
-    completed: () => (get("gnasirProgress") & 16) > 0 || get("desertExploration") >= 100,
+    ready: () => get("desertExploration") >= 10,
+    completed: () =>
+      $location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time") ||
+      get("gnasirProgress") > 0 ||
+      get("desertExploration") >= 100,
+    outfit: (): OutfitSpec => ({
+      avoid: $items`June cleaver, Kramco Sausage-o-Matic™, protonic accelerator pack, cursed magnifying glass`,
+    }),
+    choices: { 805: 1 },
+    do: $location`The Arid, Extra-Dry Desert`,
+    limit: { tries: 1 },
+  },
+  {
+    name: "Gnasir Turn-in",
+    after: ["Diary", "Find Gnasir"],
+    completed: () =>
+      (itemAmount($item`worm-riding manual page`) < 15 &&
+        (get("gnasirProgress") & 2) > 0 &&
+        (get("gnasirProgress") & 4) > 0) ||
+      get("desertExploration") >= 100,
     acquire: [
       { item: $item`can of black paint`, useful: () => (get("gnasirProgress") & 2) === 0 },
       { item: $item`killing jar`, useful: () => (get("gnasirProgress") & 4) === 0 },
@@ -129,7 +122,7 @@ const Desert: Task[] = [
   },
   {
     name: "Finish with Milestones",
-    after: ["Diary"],
+    after: ["Diary", "Gnasir Turn-in"],
     ready: () => (get("gnasirProgress") & 2) > 0 && (get("gnasirProgress") & 4) > 0,
     completed: () => !args.milestones || get("desertExploration") >= 100,
     acquire: [
@@ -144,11 +137,63 @@ const Desert: Task[] = [
     freeaction: true,
   },
   {
-    name: "Desert",
+    name: "Scrip",
+    after: ["Misc/Unlock Beach"],
+    ready: () => !args.milestones,
+    completed: () =>
+      get("desertExploration") >= 100 ||
+      have($item`Shore Inc. Ship Trip Scrip`) ||
+      have($item`UV-resistant compass`),
+    do: $location`The Shore, Inc. Travel Agency`,
+    choices: { 793: 1 },
+    limit: { tries: 1 },
+  },
+  {
+    name: "Compass",
+    after: ["Diary", "Scrip"],
+    ready: () => !args.milestones,
+    completed: () => get("desertExploration") >= 100 || have($item`UV-resistant compass`),
+    do: () => buy($coinmaster`The Shore, Inc. Gift Shop`, 1, $item`UV-resistant compass`),
+    limit: { tries: 1 },
+    freeaction: true,
+  },
+  {
+    name: "Initial Desert",
     after: ["Diary", "Compass"],
-    ready: () =>
-      !args.milestones ||
-      !$location`The Arid, Extra-Dry Desert`.noncombatQueue.includes("A Sietch in Time"),
+    ready: () => !args.milestones,
+    completed: () => get("desertExploration") >= 10,
+    do: $location`The Arid, Extra-Dry Desert`,
+    outfit: (): OutfitSpec => {
+      const handItems = $items`survival knife, UV-resistant compass`.filter((it) => have(it));
+      if (
+        have($item`industrial fire extinguisher`) &&
+        get("_fireExtinguisherCharge") >= 20 &&
+        !get("fireExtinguisherDesertUsed") &&
+        have($effect`Ultrahydrated`)
+      )
+        handItems.unshift($item`industrial fire extinguisher`);
+      return {
+        equip: handItems.slice(0, 2),
+        familiar: $familiar`Melodramedary`,
+        famequip: $item`dromedary drinking helmet`,
+      };
+    },
+    combat: new CombatStrategy()
+      .macro(() =>
+        Macro.externalIf(
+          have($effect`Ultrahydrated`) && !haveEquipped($item`"I Voted!" sticker`),
+          Macro.trySkill($skill`Fire Extinguisher: Zone Specific`)
+        )
+      )
+      .kill(),
+    limit: { turns: 5 },
+    delay: 5,
+    choices: { 805: 1 },
+  },
+  {
+    name: "Desert",
+    after: ["Diary", "Compass", "Gnasir Turn-in"],
+    ready: () => !args.milestones,
     completed: () => get("desertExploration") >= 100,
     do: $location`The Arid, Extra-Dry Desert`,
     outfit: (): OutfitSpec => {
@@ -167,15 +212,15 @@ const Desert: Task[] = [
       };
     },
     combat: new CombatStrategy()
-      .macro((): Macro => {
-        if (have($effect`Ultrahydrated`) && !haveEquipped($item`"I Voted!" sticker`))
-          return new Macro().trySkill($skill`Fire Extinguisher: Zone Specific`);
-        else return new Macro();
-      })
+      .macro(() =>
+        Macro.externalIf(
+          have($effect`Ultrahydrated`) && !haveEquipped($item`"I Voted!" sticker`),
+          Macro.trySkill($skill`Fire Extinguisher: Zone Specific`)
+        )
+      )
       .kill(),
-    limit: { soft: 30 },
-    delay: 25,
-    choices: { 805: 1 },
+    limit: { turns: 30 },
+    delay: 20,
   },
 ];
 
