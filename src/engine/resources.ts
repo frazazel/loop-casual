@@ -470,7 +470,9 @@ export const runawaySources: RunawaySource[] = [
   },
   {
     name: "Tatter",
-    available: () => mallPrice($item`tattered scrap of paper`) <= 0.5 * runawayValue,
+    available: () =>
+      mallPrice($item`tattered scrap of paper`) <= 0.5 * runawayValue &&
+      mallPrice($item`tattered scrap of paper`) / 0.5 < mallPrice($item`GOTO`) / 0.3,
     prepare: () => {
       retrieveItem(
         Math.min(10, availableAmount($item`tattered scrap of paper`)),
@@ -495,7 +497,9 @@ export const runawaySources: RunawaySource[] = [
   },
   {
     name: "GOTO",
-    available: () => mallPrice($item`GOTO`) <= 0.3 * runawayValue,
+    available: () =>
+      mallPrice($item`GOTO`) <= 0.3 * runawayValue &&
+      mallPrice($item`tattered scrap of paper`) / 0.5 >= mallPrice($item`GOTO`) / 0.3,
     prepare: () => {
       retrieveItem(Math.min(20, availableAmount($item`GOTO`)), $item`GOTO`);
       buy(Math.max(0, 20 - itemAmount($item`GOTO`)), $item`GOTO`, 0.3 * runawayValue);
