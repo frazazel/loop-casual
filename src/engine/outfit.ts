@@ -47,6 +47,8 @@ export function equipInitial(outfit: Outfit) {
 export function equipDefaults(outfit: Outfit): void {
   if (myBasestat($stat`muscle`) >= 40) outfit.equip($item`mafia thumb ring`);
   outfit.equip($item`lucky gold ring`);
+  if (!Object.values(outfit.equips).includes($item`miniature crystal ball`))
+    outfit.avoid.push($item`miniature crystal ball`);
 
   // low priority familiars for combat frequency
   if (outfit.modifier?.includes("-combat")) outfit.equip($familiar`Disgeist`);
